@@ -14,7 +14,6 @@
  *****************************************************************************/
 #pragma endregion
 
-#include "addresses.h"
 #include "audio/audio.h"
 #include "audio/mixer.h"
 #include "config.h"
@@ -50,14 +49,18 @@
 #endif // defined(__unix__) || defined(__MACOSX__)
 
 int gExitCode;
-int fdData;
-char *segments = (void *)(GOOD_PLACE_FOR_DATA_SEGMENT);
+
+#if defined(__unix__) && !defined(NO_RCT2)
+	static int fdData;
+	static char * segments = (char *)(GOOD_PLACE_FOR_DATA_SEGMENT);
+#endif
 
 int gOpenRCT2StartupAction = STARTUP_ACTION_TITLE;
 utf8 gOpenRCT2StartupActionPath[512] = { 0 };
 utf8 gExePath[MAX_PATH];
 utf8 gCustomUserDataPath[MAX_PATH] = { 0 };
 utf8 gCustomOpenrctDataPath[MAX_PATH] = { 0 };
+utf8 gCustomRCT2DataPath[MAX_PATH] = { 0 };
 utf8 gCustomPassword[MAX_PATH] = { 0 };
 
 // This should probably be changed later and allow a custom selection of things to initialise like SDL_INIT
@@ -75,7 +78,7 @@ EVP_MD_CTX *gHashCTX = NULL;
 int _finished;
 
 // Used for object movement tweening
-static struct { sint16 x, y, z; } _spritelocations1[MAX_SPRITES], _spritelocations2[MAX_SPRITES];
+static rct_xyz16 _spritelocations1[MAX_SPRITES], _spritelocations2[MAX_SPRITES];
 
 static void openrct2_loop();
 static void openrct2_setup_rct2_hooks();
@@ -352,7 +355,7 @@ void openrct2_dispose()
 #ifndef DISABLE_NETWORK
 	EVP_MD_CTX_destroy(gHashCTX);
 #endif // DISABLE_NETWORK
-#if defined(USE_MMAP) && (defined(__unix__) || defined(__MACOSX__))
+#if defined(USE_MMAP) && (defined(__unix__) || defined(__MACOSX__)) && !defined(NO_RCT2)
 	munmap(segments, 12079104);
 	close(fdData);
 #endif
@@ -405,21 +408,13 @@ static void openrct2_loop()
 
 			while (uncapTick <= currentTick && currentTick - uncapTick > 25) {
 				// Get the original position of each sprite
-				for (uint16 i = 0; i < MAX_SPRITES; i++) {
-					_spritelocations1[i].x = get_sprite(i)->unknown.x;
-					_spritelocations1[i].y = get_sprite(i)->unknown.y;
-					_spritelocations1[i].z = get_sprite(i)->unknown.z;
-				}
+				store_sprite_locations(_spritelocations1);
 
 				// Update the game so the sprite positions update
 				rct2_update();
 
 				// Get the next position of each sprite
-				for (uint16 i = 0; i < MAX_SPRITES; i++) {
-					_spritelocations2[i].x = get_sprite(i)->unknown.x;
-					_spritelocations2[i].y = get_sprite(i)->unknown.y;
-					_spritelocations2[i].z = get_sprite(i)->unknown.z;
-				}
+				store_sprite_locations(_spritelocations2);
 
 				uncapTick += 25;
 			}
@@ -496,6 +491,12 @@ void openrct2_reset_object_tween_locations()
 	}
 }
 
+static void openrct2_get_segment_data_path(char * buffer, size_t bufferSize)
+{
+	platform_get_exe_path(buffer);
+	safe_strcat_path(buffer, "openrct2_data", bufferSize);
+}
+
 /**
  * Loads RCT2's data model and remaps the addresses.
  * @returns true if the data integrity check succeeded, otherwise false.
@@ -506,7 +507,7 @@ bool openrct2_setup_rct2_segment()
 	// necessary. Windows does not need to do this as OpenRCT2 runs as a DLL loaded from the Windows PE.
 	int len = 0x01429000 - 0x8a4000; // 0xB85000, 12079104 bytes or around 11.5MB
 	int err = 0;
-#if defined(USE_MMAP) && (defined(__unix__) || defined(__MACOSX__))
+#if defined(USE_MMAP) && (defined(__unix__) || defined(__MACOSX__)) && !defined(NO_RCT2)
 	#define RDATA_OFFSET 0x004A4000
 	#define DATASEG_OFFSET 0x005E2000
 
@@ -539,7 +540,9 @@ bool openrct2_setup_rct2_segment()
 	// TODO: UGLY, UGLY HACK!
 	//off_t file_size = 6750208;
 
-	fdData = open("openrct2_data", O_RDONLY);
+	utf8 segmentDataPath[MAX_PATH];
+	openrct2_get_segment_data_path(segmentDataPath, sizeof(segmentDataPath));
+	fdData = open(segmentDataPath, O_RDONLY);
 	if (fdData < 0)
 	{
 		log_fatal("failed to load openrct2_data");
@@ -554,7 +557,7 @@ bool openrct2_setup_rct2_segment()
 	}
 #endif // defined(USE_MMAP) && (defined(__unix__) || defined(__MACOSX__))
 
-#if defined(__unix__)
+#if defined(__unix__) && !defined(NO_RCT2)
 	int pageSize = getpagesize();
 	int numPages = (len + pageSize - 1) / pageSize;
 	unsigned char *dummy = malloc(numPages);
@@ -594,7 +597,7 @@ bool openrct2_setup_rct2_segment()
 	}
 #if !defined(USE_MMAP)
 	// section: text
-	err = mprotect((void *)0x401000, 0x8a4000 - 0x401000, PROT_READ | PROT_EXEC);
+	err = mprotect((void *)0x401000, 0x8a4000 - 0x401000, PROT_READ | PROT_EXEC | PROT_WRITE);
 	if (err != 0)
 	{
 		perror("mprotect");
@@ -614,7 +617,10 @@ bool openrct2_setup_rct2_segment()
 		log_error("VirtualAlloc, segments = %p, GetLastError = 0x%x", segments, GetLastError());
 		return false;
 	}
-	SDL_RWops * rw = SDL_RWFromFile("openrct2_data", "rb");
+
+	utf8 segmentDataPath[MAX_PATH];
+	openrct2_get_segment_data_path(segmentDataPath, sizeof(segmentDataPath));
+	SDL_RWops * rw = SDL_RWFromFile(segmentDataPath, "rb");
 	if (rw == NULL)
 	{
 		log_error("failed to load file");
@@ -627,6 +633,7 @@ bool openrct2_setup_rct2_segment()
 	SDL_RWclose(rw);
 #endif // defined(USE_MMAP) && defined(__WINDOWS__)
 
+#if !defined(NO_RCT2) && defined(USE_MMAP)
 	// Check that the expected data is at various addresses.
 	// Start at 0x9a6000, which is start of .data, to skip the region containing addresses to DLL
 	// calls, which can be changed by windows/wine loader.
@@ -639,7 +646,7 @@ bool openrct2_setup_rct2_segment()
 		log_warning("c2 = %u, expected %u, match %d", c2, exp_c2, c2 == exp_c2);
 		return false;
 	}
-
+#endif
 	return true;
 }
 

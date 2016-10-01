@@ -15,7 +15,6 @@
 #pragma endregion
 
 #include <time.h>
-#include "addresses.h"
 #include "audio/audio.h"
 #include "config.h"
 #include "drawing/drawing.h"
@@ -45,6 +44,9 @@
 #include "windows/error.h"
 
 static const int gRandomShowcase = 0;
+
+bool gTitleHideVersionInfo = false;
+
 sint32 gTitleScriptCommand = -1;
 uint8 gTitleScriptSave = 0xFF;
 sint32 gTitleScriptSkipTo = -1;
@@ -89,8 +91,6 @@ static uint8 *generate_random_script();
 
 #pragma endregion
 
-static void title_create_windows();
-
 static uint8 *title_script_load();
 
 /**
@@ -130,6 +130,7 @@ void title_load()
 	//stop_other_sounds();
 	viewport_init_all();
 	news_item_init_queue();
+	window_main_open();
 	title_create_windows();
 	title_init_showcase();
 	gfx_invalidate_screen();
@@ -148,14 +149,14 @@ void title_load()
  * tutorial, toolbox and exit.
  *  rct2: 0x0066B5C0 (part of 0x0066B3E8)
  */
-static void title_create_windows()
+void title_create_windows()
 {
-	window_main_open();
 	window_title_menu_open();
 	window_title_exit_open();
 	window_title_options_open();
 	window_title_logo_open();
 	window_resize_gui(gScreenWidth, gScreenHeight);
+	gTitleHideVersionInfo = false;
 }
 
 /**
@@ -365,11 +366,8 @@ static void title_do_next_script_opcode()
 		break;
 	case TITLE_SCRIPT_LOAD:
 		{
-			const uint8 *loadPtr;
 			char *ch, filename[32], path[MAX_PATH];
 			char separator = platform_get_path_separator();
-
-			loadPtr = _currentScript - 1;
 
 			// Get filename
 			ch = filename;
@@ -504,8 +502,10 @@ void DrawOpenRCT2(rct_drawpixelinfo *dpi, int x, int y)
 
 	// Write name and version information
 	openrct2_write_full_version_info(ch, sizeof(buffer) - (ch - buffer));
+	gfx_draw_string(dpi, buffer, 0, x + 5, y + 5 - 13);
 
-	// Draw Text
+	// Write platform information
+	sprintf(ch, "%s (%s)", OPENRCT2_PLATFORM, OPENRCT2_ARCHITECTURE);
 	gfx_draw_string(dpi, buffer, 0, x + 5, y + 5);
 }
 
@@ -537,7 +537,7 @@ void title_update()
 	window_map_tooltip_update_visibility();
 	window_dispatch_update_all();
 
-	RCT2_GLOBAL(RCT2_ADDRESS_SAVED_AGE, uint16)++;
+	gSavedAge++;
 
 	// Input
 	game_handle_input();
@@ -788,7 +788,7 @@ bool title_refresh_sequence()
 		return true;
 	}
 	log_error("Failed to load title sequence, hasLoad: %i, hasWait4seconds: %i, hasRestart: %i, hasInvalidSave: %i", hasLoad, hasWait, hasRestart, hasInvalidSave);
-	window_error_open(STR_ERR_FAILED_TO_LOAD_TITLE_SEQUENCE, (!hasWait && hasRestart) ? 5439 : STR_NONE);
+	window_error_open(STR_ERR_FAILED_TO_LOAD_TITLE_SEQUENCE, (!hasWait && hasRestart) ? STR_TITLE_EDITOR_ERR_RESTART_REQUIRES_WAIT : STR_NONE);
 	_scriptNoLoadsSinceRestart = 1;
 	if (_loadedScript != _magicMountainScript)
 		SafeFree(_loadedScript);

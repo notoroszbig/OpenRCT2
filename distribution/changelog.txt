@@ -1,11 +1,13 @@
 0.0.5 (in development)
 ------------------------------------------------------------------------
+- Feature: Ability to disable rendering of weather effects and gloom
 - Feature: New view option: "See-Through Paths"
 - Feature: Add cheat to reset date.
 - Feature: Add OpenGL drawing engine.
 - Feature: Implementation of the user-defined currency
 - Feature: Add ability to rotate map elements with the tile inspector.
 - Feature: Add ride console command for diagnostics and changing vehicle type.
+- Feature: Allow selecting corners when using the mountain tool.
 - Feature: Allow setting ownership of map edges.
 - Feature: Allow up to 255 cars per train.
 - Feature: Importing SV4 and SC4 files with rides.
@@ -21,12 +23,14 @@
 - Feature: Objects are scanned from the user directory as well as the RCT2 directory.
 - Feature: Objects directory is scanned recursively.
 - Feature: Optionally zoom in towards the cursor rather than the screen centre.
-- Improve: Performance and reliability of loading objects.
-- Improve: Screenshots are now saved with the name of the park and the current date and time.
-- Improve: More accurate frame rate calculation
+- Improved: Pathfinding algorithm.
+- Improved: Performance and reliability of loading objects.
+- Improved: Screenshots are now saved with the name of the park and the current date and time.
+- Improved: More accurate frame rate calculation
 - Removed: BMP screenshots.
 - Removed: Intamin and Phoenix easter eggs.
 - Fix: [#1038] Guest List is out of order.
+- Fix: [#2081] Game hangs when track has infinite loop.
 - Fix: [#2754] Dragging scrollview fails when scaled.
 - Fix: [#3210] Scenery window scrolls too far.
 - Fix: [#3282] Launched Freefall ride ratings are fixed for Downward Launch (original bug).
@@ -43,7 +47,7 @@
 - Fix: [#3824] Segfault when passing invalid arguments to ride set type.
 - Fix: [#3858] Tooltip shown when hovering over title logo.
 - Fix: [#3915] Restore horizontal and vertical scrollbar behavior from RCT2 when clicking on one of the scrollbars.
-- Technical: Mulitplayer groups are now stored in JSON format.
+- Technical: Multiplayer groups are now stored in JSON format.
 
 0.0.4-beta (2016-04-15)
 ------------------------------------------------------------------------
