@@ -1,32 +1,24 @@
-# Version numbers to update
-!define /ifndef APPV_MAJOR 0
-!define /ifndef APPV_MINOR 0
-!define /ifndef APPV_MAINT 5
-!define /ifndef APPV_BUILD 0
-
 !define APPNAME             "OpenRCT2"
-!define APPVERSION          "${APPV_MAJOR}.${APPV_MINOR}.${APPV_MAINT}${APPV_EXTRA}"
-!define APPVERSIONINTERNAL  "${APPV_MAJOR}.${APPV_MINOR}.${APPV_MAINT}.${APPV_BUILD}"
-
-!define /ifndef APPURLLINK "https://github.com/OpenRCT2/OpenRCT2"
-!define APPNAMEANDVERSION "${APPNAME} ${APPVERSION}"
+!define APPVERSION          "${APPV_MAIN}${APPV_EXTRA}"
+!define APPVERSIONINTERNAL  "${APPV_MAIN}.0"
+!define APPNAMEANDVERSION   "${APPNAME} ${APPVERSION}"
+!define APPURLLINK          "https://github.com/OpenRCT2/OpenRCT2"
 
 !if "${PLATFORM}" == "Win32"
-    !define OPENRCT2_EXE "openrct2.exe"
-    !define OPENRCT2_DLL "openrct2.dll"
-    !define APPBITS      32
-    !define APPARCH      "win32"
+    !define OPENRCT2_EXE    "openrct2.exe"
+    !define APPBITS         32
+    !define APPARCH         "win32"
 
     InstallDir "$PROGRAMFILES32\OpenRCT2\"
 !else
-    !define OPENRCT2_EXE            "openrct2_x64.exe"
-    !define APPBITS                 64
-    !define APPARCH                 "win64"
+    !define OPENRCT2_EXE    "openrct2.exe"
+    !define APPBITS         64
+    !define APPARCH         "win64"
 
     InstallDir "$PROGRAMFILES64\OpenRCT2\"
 !endif
 
-!define SUPPORTED_OS    "Windows Vista, 7, 8.1 and 10"
+!define SUPPORTED_OS        "Windows Vista, 7, 8.1 and 10"
 
 ; Define root variable relative to installer
 !define PATH_ROOT "..\..\"
@@ -65,7 +57,7 @@ CRCCheck force
 ShowInstDetails show
 ShowUninstDetails show
 
-RequestExecutionLevel admin
+RequestExecutionLevel user
 
 Var SHORTCUTS
 
@@ -74,6 +66,7 @@ Var SHORTCUTS
 !include "InstallOptions.nsh"
 !include "WinVer.nsh"
 !include "x64.nsh"
+!include "UAC.nsh"
 
 !define MUI_ABORTWARNING
 !define MUI_WELCOMEPAGE_TITLE_3LINES
@@ -99,7 +92,8 @@ ManifestDPIAware true
 
 !define MUI_FINISHPAGE_TITLE_3LINES
 !define MUI_FINISHPAGE_RUN_TEXT "Run ${APPNAMEANDVERSION} now!"
-!define MUI_FINISHPAGE_RUN "$INSTDIR\${OPENRCT2_EXE}"
+!define MUI_FINISHPAGE_RUN
+!define MUI_FINISHPAGE_RUN_FUNCTION PageFinishRun
 !define MUI_FINISHPAGE_LINK "Visit the OpenRCT2 site for more information"
 !define MUI_FINISHPAGE_LINK_LOCATION "${APPURLLINK}"
 !define MUI_FINISHPAGE_NOREBOOTSUPPORT
@@ -115,6 +109,35 @@ ManifestDPIAware true
 ; Set languages (first is default language)
 !insertmacro MUI_LANGUAGE "English"
 !insertmacro MUI_RESERVEFILE_LANGDLL
+
+!macro Init thing
+uac_tryagain:
+!insertmacro UAC_RunElevated
+${Switch} $0
+${Case} 0
+	${IfThen} $1 = 1 ${|} Quit ${|} ;we are the outer process, the inner process has done its work, we are done
+	${IfThen} $3 <> 0 ${|} ${Break} ${|} ;we are admin, let the show go on
+	${If} $1 = 3 ;RunAs completed successfully, but with a non-admin user
+		MessageBox mb_YesNo|mb_IconExclamation|mb_TopMost|mb_SetForeground "This ${thing} requires admin privileges, try again" /SD IDNO IDYES uac_tryagain IDNO 0
+	${EndIf}
+	;fall-through and die
+${Case} 1223
+	MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "This ${thing} requires admin privileges, aborting!"
+	Quit
+${Case} 1062
+	MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Logon service not running, aborting!"
+	Quit
+${Default}
+	MessageBox mb_IconStop|mb_TopMost|mb_SetForeground "Unable to elevate, error $0"
+	Quit
+${EndSwitch}
+
+SetShellVarContext all
+!macroend
+
+Function PageFinishRun
+!insertmacro UAC_AsUser_ExecShell "" "$INSTDIR\${OPENRCT2_EXE}" "" "" ""
+FunctionEnd
 
 ;--------------------------------------------------------------
 ; (Core) OpenRCT2 install section. Copies all internal game data
@@ -134,15 +157,9 @@ Section "!OpenRCT2" Section1
     ; Copy the rest of the stuff
     SetOutPath "$INSTDIR\"
 
-    ; Copy curl ca file
-    File ..\..\curl-ca-bundle.crt
-
     ; Copy text files
     File ..\changelog.txt
     Push "$INSTDIR\changelog.txt"
-    Call unix2dos
-    File ..\known_issues.txt
-    Push "$INSTDIR\known_issues.txt"
     Call unix2dos
     File ..\..\licence.txt
     Push "$INSTDIR\licence.txt"
@@ -156,9 +173,8 @@ Section "!OpenRCT2" Section1
 
     ; Copy executable
     File /oname=${OPENRCT2_EXE} ${BINARY_DIR}\${OPENRCT2_EXE}
-!ifdef OPENRCT2_DLL
-    File /oname=${OPENRCT2_DLL} ${BINARY_DIR}\${OPENRCT2_DLL}
-!endif
+    File /oname=openrct2.com ${BINARY_DIR}\openrct2.com
+    File /oname=openrct2.dll ${BINARY_DIR}\openrct2.dll
 
     ; Create the Registry Entries
     WriteRegStr HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OpenRCT2" "Comments" "Visit ${APPURLLINK}"
@@ -219,16 +235,13 @@ Section "Uninstall"
     Delete "$SMPROGRAMS\$SHORTCUTS\Contributors.lnk"
 
     ; Clean up OpenRCT2 dir
-    Delete "$INSTDIR\curl-ca-bundle.crt"
     Delete "$INSTDIR\changelog.txt"
-    Delete "$INSTDIR\known_issues.txt"
     Delete "$INSTDIR\licence.txt"
     Delete "$INSTDIR\readme.txt"
     Delete "$INSTDIR\contributors.md"
     Delete "$INSTDIR\${OPENRCT2_EXE}"
-!ifdef OPENRCT2_DLL
-    Delete "$INSTDIR\${OPENRCT2_DLL}"
-!endif
+    Delete "$INSTDIR\openrct2.com"
+    Delete "$INSTDIR\openrct2.dll"
     Delete "$INSTDIR\INSTALL.LOG"
 
     ; Data files
@@ -472,6 +485,7 @@ Var UninstallString
 ;-----------------------------------------------------------------------------------
 ; NSIS Initialize function, determine if we are going to install/upgrade or uninstall
 Function .onInit
+    !insertmacro Init "installer"
     StrCpy $SHORTCUTS "OpenRCT2"
 
     SectionSetFlags 0 17
@@ -492,5 +506,9 @@ FinishCallback:
     ClearErrors
     ; Call CheckProcessorArchitecture
     ; Call CheckWindowsVersion
+FunctionEnd
+
+Function un.onInit
+!insertmacro Init "uninstaller"
 FunctionEnd
 ; eof

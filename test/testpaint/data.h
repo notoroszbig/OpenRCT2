@@ -1,4 +1,4 @@
-#pragma region Copyright (c) 2014-2016 OpenRCT2 Developers
+#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
  * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
  *
@@ -17,10 +17,15 @@
 #ifndef _TEST_PAINT_DATA_H_
 #define _TEST_PAINT_DATA_H_
 
-#include "../../src/common.h"
+#include <openrct2/common.h>
+#include <openrct2/ride/ride.h>
 
-extern const utf8string RideNames[91];
+
+extern const utf8string RideNames[RIDE_TYPE_COUNT];
 extern const utf8string TrackNames[256];
 extern const utf8string FlatTrackNames[256];
+extern const utf8string TrackElemNames[256];
+extern const utf8string RideCodeNames[RIDE_TYPE_COUNT];
+extern const utf8string TrackCodeNames[256];
 
 #endif // #endif _TEST_PAINT_DATA_H_
