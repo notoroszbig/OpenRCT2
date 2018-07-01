@@ -1,51 +1,40 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
-#include "../../interface/viewport.h"
+#include "../../interface/Viewport.h"
 #include "../../paint/Paint.h"
 #include "../../paint/Supports.h"
 #include "../Track.h"
-#include "../track_paint.h"
+#include "../TrackPaint.h"
+#include "../../world/Sprite.h"
 
-typedef struct rct_crooked_house_bound_box
+struct rct_crooked_house_bound_box
 {
-    sint16 offset_x;
-    sint16 offset_y;
-    sint16 length_x;
-    sint16 length_y;
-} rct_crooked_house_bound_box;
+    int16_t offset_x;
+    int16_t offset_y;
+    int16_t length_x;
+    int16_t length_y;
+};
 
-static const rct_crooked_house_bound_box crooked_house_data[] = { { 6, 0, 42, 24 },
+static constexpr const rct_crooked_house_bound_box crooked_house_data[] = { { 6, 0, 42, 24 },
                                                      { 0, 0, 0, 0 },
                                                      { -16, -16, 32, 32 },
                                                      { 0, 0, 0, 0 }, // Unused
                                                      { 0, 6, 24, 42 } };
 
 /**
- * rct2: 0x0088ABA4
- * @param (edi) direction
- * @param (al) al
- * @param (cl) cl
- * @param (ebx) image_id
- * @param (edx) height
+ *  rct2: 0x0088ABA4
  */
-static void paint_crooked_house_structure(paint_session * session, uint8 direction, uint8 x_offset, uint8 y_offset,
-                                          uint32 segment, sint32 height)
+static void paint_crooked_house_structure(paint_session * session, uint8_t direction, uint8_t x_offset, uint8_t y_offset,
+                                          uint32_t segment, int32_t height)
 {
-    rct_tile_element * original_tile_element = static_cast<rct_tile_element *>(session->CurrentlyDrawnItem);
+    const rct_tile_element * original_tile_element = static_cast<const rct_tile_element *>(session->CurrentlyDrawnItem);
 
     Ride * ride = get_ride(track_element_get_ride_index(original_tile_element));
 
@@ -61,29 +50,35 @@ static void paint_crooked_house_structure(paint_session * session, uint8 directi
         }
     }
 
-    uint32 image_id = (direction + rideEntry->vehicles[0].base_image_id) | session->TrackColours[SCHEME_MISC];
+    uint32_t image_id = (direction + rideEntry->vehicles[0].base_image_id) | session->TrackColours[SCHEME_MISC];
 
     rct_crooked_house_bound_box boundBox = crooked_house_data[segment];
-    sub_98197C(session, image_id, x_offset, y_offset, boundBox.length_x, boundBox.length_y, 127, height + 3, boundBox.offset_x,
-               boundBox.offset_y, height + 3, get_current_rotation());
+    sub_98197C(
+        session, image_id, x_offset, y_offset, boundBox.length_x, boundBox.length_y, 127, height + 3, boundBox.offset_x,
+        boundBox.offset_y, height + 3);
 }
 
-static void paint_crooked_house(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction, sint32 height,
-                                rct_tile_element * tileElement)
+static void paint_crooked_house(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     trackSequence = track_map_3x3[direction][trackSequence];
 
-    sint32   edges    = edges_3x3[trackSequence];
+    int32_t   edges    = edges_3x3[trackSequence];
     Ride *   ride     = get_ride(rideIndex);
     LocationXY16 position = session->MapPosition;
 
-    wooden_a_supports_paint_setup(session, (direction & 1), 0, height, session->TrackColours[SCHEME_MISC], NULL);
+    wooden_a_supports_paint_setup(session, (direction & 1), 0, height, session->TrackColours[SCHEME_MISC], nullptr);
 
-    track_paint_util_paint_floor(session, edges, session->TrackColours[SCHEME_TRACK], height, floorSpritesCork,
-                                 get_current_rotation());
+    track_paint_util_paint_floor(session, edges, session->TrackColours[SCHEME_TRACK], height, floorSpritesCork);
 
-    track_paint_util_paint_fences(session, edges, position, tileElement, ride, session->TrackColours[SCHEME_MISC], height,
-                                  fenceSpritesRope, get_current_rotation());
+    track_paint_util_paint_fences(
+        session, edges, position, tileElement, ride, session->TrackColours[SCHEME_MISC], height, fenceSpritesRope,
+        session->CurrentRotation);
 
     switch (trackSequence)
     {
@@ -100,7 +95,7 @@ static void paint_crooked_house(paint_session * session, uint8 rideIndex, uint8 
         // case 8: sub_88ABA4(rideIndex, 224, 0, 3, height); break;
     }
 
-    sint32 cornerSegments = 0;
+    int32_t cornerSegments = 0;
     switch (trackSequence)
     {
     case 1:
@@ -126,11 +121,11 @@ static void paint_crooked_house(paint_session * session, uint8 rideIndex, uint8 
     paint_util_set_general_support_height(session, height + 128, 0x20);
 }
 
-TRACK_PAINT_FUNCTION get_track_paint_function_crooked_house(sint32 trackType, sint32 direction)
+TRACK_PAINT_FUNCTION get_track_paint_function_crooked_house(int32_t trackType, int32_t direction)
 {
     if (trackType != FLAT_TRACK_ELEM_3_X_3)
     {
-        return NULL;
+        return nullptr;
     }
 
     return paint_crooked_house;

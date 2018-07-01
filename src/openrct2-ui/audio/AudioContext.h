@@ -1,16 +1,24 @@
+/*****************************************************************************
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <openrct2/common.h>
 #include <openrct2/audio/AudioChannel.h>
 #include <openrct2/audio/AudioSource.h>
 
 struct SDL_RWops;
-struct SpeexResamplerState_;
-typedef struct SpeexResamplerState_ SpeexResamplerState;
+using SpeexResamplerState = struct SpeexResamplerState_;
 
-namespace OpenRCT2 { namespace Audio
+namespace OpenRCT2::Audio
 {
     struct      AudioFormat;
     interface   IAudioContext;
@@ -18,24 +26,24 @@ namespace OpenRCT2 { namespace Audio
 #pragma pack(push, 1)
     struct WaveFormat
     {
-        uint16 encoding;
-        uint16 channels;
-        uint32 frequency;
-        uint32 byterate;
-        uint16 blockalign;
-        uint16 bitspersample;
+        uint16_t encoding;
+        uint16_t channels;
+        uint32_t frequency;
+        uint32_t byterate;
+        uint16_t blockalign;
+        uint16_t bitspersample;
     };
     assert_struct_size(WaveFormat, 16);
 
     struct WaveFormatEx
     {
-        uint16 encoding;
-        uint16 channels;
-        uint32 frequency;
-        uint32 byterate;
-        uint16 blockalign;
-        uint16 bitspersample;
-        uint16 extrasize;
+        uint16_t encoding;
+        uint16_t channels;
+        uint32_t frequency;
+        uint32_t byterate;
+        uint16_t blockalign;
+        uint16_t bitspersample;
+        uint16_t extrasize;
     };
     assert_struct_size(WaveFormatEx, 18);
 #pragma pack(pop)
@@ -70,5 +78,6 @@ namespace OpenRCT2 { namespace Audio
         IAudioMixer * Create();
     }
 
-    IAudioContext * CreateAudioContext();
-} }
+    std::unique_ptr<IAudioContext> CreateAudioContext();
+
+} // namespace OpenRCT2::Audio

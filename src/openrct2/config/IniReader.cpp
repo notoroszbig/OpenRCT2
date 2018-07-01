@@ -1,27 +1,19 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <cctype>
 #include <initializer_list>
 #include <string>
-#include <tuple>
 #include <unordered_map>
 #include <vector>
 #include "../common.h"
-#include "../core/FileStream.hpp"
+#include "../core/IStream.hpp"
 #include "../core/String.hpp"
 #include "../core/StringBuilder.hpp"
 #include "IniReader.hpp"
@@ -62,7 +54,7 @@ struct StringIHash
 {
     std::size_t operator()(const std::string &s) const
     {
-        typedef std::char_traits<char> Traits;
+        using Traits = std::char_traits<char>;
         std::size_t seed = 0;
         for (const char &c : s)
         {
@@ -78,7 +70,7 @@ struct StringICmp
 {
     bool operator()(const std::string &a, const std::string &b) const
     {
-        typedef std::char_traits<char> Traits;
+        using Traits = std::char_traits<char>;
         if (a.size() != b.size()) return false;
         const char *s1 = a.data(), *s2 = b.data();
         for (std::size_t i = a.size(); i > 0; --i, ++s1, ++s2)
@@ -94,15 +86,15 @@ struct StringICmp
 class IniReader final : public IIniReader
 {
 private:
-    std::vector<uint8>                                                      _buffer;
+    std::vector<uint8_t>                                                      _buffer;
     std::vector<Span>                                                       _lines;
     std::unordered_map<std::string, LineRange, StringIHash, StringICmp>     _sections;
     std::unordered_map<std::string, std::string, StringIHash, StringICmp>   _values;
 
 public:
-    IniReader(IStream * stream)
+    explicit IniReader(IStream * stream)
     {
-        uint64 length = stream->GetLength() - stream->GetPosition();
+        uint64_t length = stream->GetLength() - stream->GetPosition();
         _buffer.resize(length);
         stream->Read(_buffer.data(), length);
 
@@ -142,9 +134,9 @@ public:
         return result;
     }
 
-    sint32 GetSint32(const std::string &name, sint32 defaultValue) const override
+    int32_t GetInt32(const std::string &name, int32_t defaultValue) const override
     {
-        sint32 result = defaultValue;
+        int32_t result = defaultValue;
         std::string value;
         if (TryGetString(name, &value))
         {
@@ -152,7 +144,7 @@ public:
             {
                 result = std::stoi(value);
             }
-            catch (std::exception)
+            catch (const std::exception &)
             {
             }
         }
@@ -169,7 +161,7 @@ public:
             {
                 result = std::stof(value);
             }
-            catch (std::exception)
+            catch (const std::exception &)
             {
             }
         }
@@ -377,32 +369,32 @@ private:
 class DefaultIniReader final : public IIniReader
 {
 public:
-    bool ReadSection(const std::string &name) override
+    bool ReadSection([[maybe_unused]] const std::string& name) override
     {
         return true;
     }
 
-    bool GetBoolean(const std::string &name, bool defaultValue) const override
+    bool GetBoolean([[maybe_unused]] const std::string& name, bool defaultValue) const override
     {
         return defaultValue;
     }
 
-    sint32 GetSint32(const std::string &name, sint32 defaultValue) const override
+    int32_t GetInt32([[maybe_unused]] const std::string& name, int32_t defaultValue) const override
     {
         return defaultValue;
     }
 
-    float GetFloat(const std::string &name, float defaultValue) const override
+    float GetFloat([[maybe_unused]] const std::string& name, float defaultValue) const override
     {
         return defaultValue;
     }
 
-    std::string GetString(const std::string &name, const std::string &defaultValue) const override
+    std::string GetString([[maybe_unused]] const std::string& name, const std::string& defaultValue) const override
     {
         return defaultValue;
     }
 
-    bool TryGetString(const std::string &name, std::string * outValue) const override
+    bool TryGetString([[maybe_unused]] const std::string& name, [[maybe_unused]] std::string* outValue) const override
     {
         return false;
     }

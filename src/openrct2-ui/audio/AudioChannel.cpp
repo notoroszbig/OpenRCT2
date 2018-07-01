@@ -1,22 +1,15 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/common.h>
 #include <cmath>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <speex/speex_resampler.h>
 #include <openrct2/core/Math.hpp>
 #include <openrct2/audio/AudioChannel.h>
@@ -24,7 +17,7 @@
 #include "AudioContext.h"
 #include "AudioFormat.h"
 
-namespace OpenRCT2 { namespace Audio
+namespace OpenRCT2::Audio
 {
     class AudioChannelImpl : public ISDLAudioChannel
     {
@@ -32,17 +25,17 @@ namespace OpenRCT2 { namespace Audio
         ISDLAudioSource * _source = nullptr;
         SpeexResamplerState * _resampler = nullptr;
 
-        sint32 _group = MIXER_GROUP_SOUND;
+        int32_t _group = MIXER_GROUP_SOUND;
         double _rate = 0;
-        uint64 _offset = 0;
-        sint32 _loop = 0;
+        uint64_t _offset = 0;
+        int32_t _loop = 0;
 
-        sint32  _volume = 1;
+        int32_t  _volume = 1;
         float   _volume_l = 0.f;
         float   _volume_r = 0.f;
         float   _oldvolume_l = 0.f;
         float   _oldvolume_r = 0.f;
-        sint32  _oldvolume = 0;
+        int32_t  _oldvolume = 0;
         float   _pan = 0;
 
         bool    _stopping = false;
@@ -86,12 +79,12 @@ namespace OpenRCT2 { namespace Audio
             _resampler = value;
         }
 
-        sint32 GetGroup() const override
+        int32_t GetGroup() const override
         {
             return _group;
         }
 
-        void SetGroup(sint32 group) override
+        void SetGroup(int32_t group) override
         {
             _group = group;
         }
@@ -103,37 +96,37 @@ namespace OpenRCT2 { namespace Audio
 
         void SetRate(double rate) override
         {
-            _rate = Math::Max(0.001, rate);
+            _rate = std::max(0.001, rate);
         }
 
-        uint64 GetOffset() const override
+        uint64_t GetOffset() const override
         {
             return _offset;
         }
 
-        bool SetOffset(uint64 offset) override
+        bool SetOffset(uint64_t offset) override
         {
             if (_source != nullptr && offset < _source->GetLength())
             {
                 AudioFormat format = _source->GetFormat();
-                sint32 samplesize = format.channels * format.BytesPerSample();
+                int32_t samplesize = format.channels * format.BytesPerSample();
                 _offset = (offset / samplesize) * samplesize;
                 return true;
             }
             return false;
         }
 
-        virtual sint32 GetLoop() const override
+        virtual int32_t GetLoop() const override
         {
             return _loop;
         }
 
-        virtual void SetLoop(sint32 value) override
+        virtual void SetLoop(int32_t value) override
         {
             _loop = value;
         }
 
-        sint32 GetVolume() const override
+        int32_t GetVolume() const override
         {
             return _volume;
         }
@@ -158,12 +151,12 @@ namespace OpenRCT2 { namespace Audio
             return _oldvolume_r;
         }
 
-        sint32 GetOldVolume() const override
+        int32_t GetOldVolume() const override
         {
             return _oldvolume;
         }
 
-        void SetVolume(sint32 volume) override
+        void SetVolume(int32_t volume) override
         {
             _volume = Math::Clamp(0, volume, MIXER_VOLUME_MAX);
         }
@@ -230,7 +223,7 @@ namespace OpenRCT2 { namespace Audio
             return !_done;
         }
 
-        void Play(IAudioSource * source, sint32 loop) override
+        void Play(IAudioSource * source, int32_t loop) override
         {
             _source = static_cast<ISDLAudioSource *>(source);
             _loop = loop;
@@ -247,7 +240,7 @@ namespace OpenRCT2 { namespace Audio
 
         AudioFormat GetFormat() const override
         {
-            AudioFormat result = { 0 };
+            AudioFormat result = {};
             // The second check is there because NullAudioSource does not implement GetFormat. Avoid calling it.
             if (_source != nullptr && _source->GetLength() > 0)
             {
@@ -295,4 +288,4 @@ namespace OpenRCT2 { namespace Audio
     {
         return new (std::nothrow) AudioChannelImpl();
     }
-} }
+} // namespace OpenRCT2::Audio

@@ -1,27 +1,22 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
-#include <openrct2-ui/windows/Window.h>
-
-#include <openrct2/core/Memory.hpp>
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <string>
+#include <vector>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2/object/ObjectManager.h>
 #include <openrct2/platform/platform.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2-ui/windows/Window.h>
+#include <openrct2/object/ObjectList.h>
 
+// clang-format off
 enum WINDOW_OBJECT_LOAD_ERROR_WIDGET_IDX {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -46,12 +41,12 @@ static rct_widget window_object_load_error_widgets[] = {
     { WWT_FRAME,             0, 0,               WW - 1,                0,          WH - 1,     STR_NONE,                       STR_NONE },                // Background
     { WWT_CAPTION,           0, 1,               WW - 2,                1,          14,         STR_OBJECT_LOAD_ERROR_TITLE,    STR_WINDOW_TITLE_TIP },    // Title bar
     { WWT_CLOSEBOX,          0, WW - 13,         WW - 3,                2,          13,         STR_CLOSE_X,                    STR_CLOSE_WINDOW_TIP },    // Close button
-    { WWT_13,                0, NAME_COL_LEFT,   SOURCE_COL_LEFT - 1,   57,         68,         STR_OBJECT_NAME,                STR_NONE },                // 'Object name' header
-    { WWT_13,                0, SOURCE_COL_LEFT, TYPE_COL_LEFT - 1,     57,         68,         STR_OBJECT_SOURCE,              STR_NONE },                // 'Object source' header
-    { WWT_13,                0, TYPE_COL_LEFT,   WW_LESS_PADDING - 1,   57,         68,         STR_OBJECT_TYPE,                STR_NONE },                // 'Object type' header
-    { WWT_SCROLL,            0, 4,               WW_LESS_PADDING,       68,         WH - 40,    SCROLL_VERTICAL,                STR_NONE },                // Scrollable list area
-    { WWT_CLOSEBOX,          0, 45,              225,                   WH - 32,    WH - 12,    STR_COPY_SELECTED,              STR_NONE },                // Copy selected btn
-    { WWT_CLOSEBOX,          0, 225,             395,                   WH - 32,    WH - 12,    STR_COPY_ALL,                   STR_NONE },                // Copy all btn
+    { WWT_TABLE_HEADER,      0, NAME_COL_LEFT,   SOURCE_COL_LEFT - 1,   57,         70,         STR_OBJECT_NAME,                STR_NONE },                // 'Object name' header
+    { WWT_TABLE_HEADER,      0, SOURCE_COL_LEFT, TYPE_COL_LEFT - 1,     57,         70,         STR_OBJECT_SOURCE,              STR_NONE },                // 'Object source' header
+    { WWT_TABLE_HEADER,      0, TYPE_COL_LEFT,   WW_LESS_PADDING - 1,   57,         70,         STR_OBJECT_TYPE,                STR_NONE },                // 'Object type' header
+    { WWT_SCROLL,            0, 4,               WW_LESS_PADDING,       70,         WH - 33,    SCROLL_VERTICAL,                STR_NONE },                // Scrollable list area
+    { WWT_BUTTON,            0, 45,              220,                   WH - 23,    WH - 10,    STR_COPY_SELECTED,              STR_NONE },                // Copy selected btn
+    { WWT_BUTTON,            0, 230,             400,                   WH - 23,    WH - 10,    STR_COPY_ALL,                   STR_NONE },                // Copy all btn
     { WIDGETS_END },
 };
 
@@ -59,11 +54,11 @@ static rct_string_id get_object_type_string(const rct_object_entry *entry);
 static void window_object_load_error_close(rct_window *w);
 static void window_object_load_error_update(rct_window *w);
 static void window_object_load_error_mouseup(rct_window *w, rct_widgetindex widgetIndex);
-static void window_object_load_error_scrollgetsize(rct_window *w, sint32 scrollIndex, sint32 *width, sint32 *height);
-static void window_object_load_error_scrollmouseover(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y);
-static void window_object_load_error_scrollmousedown(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y);
+static void window_object_load_error_scrollgetsize(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height);
+static void window_object_load_error_scrollmouseover(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
+static void window_object_load_error_scrollmousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
 static void window_object_load_error_paint(rct_window *w, rct_drawpixelinfo *dpi);
-static void window_object_load_error_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, sint32 scrollIndex);
+static void window_object_load_error_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int32_t scrollIndex);
 
 static rct_window_event_list window_object_load_error_events = {
     window_object_load_error_close,
@@ -95,10 +90,11 @@ static rct_window_event_list window_object_load_error_events = {
     window_object_load_error_paint,
     window_object_load_error_scrollpaint
 };
+// clang-format on
 
-static rct_object_entry * _invalid_entries = nullptr;
-static sint32 highlighted_index = -1;
-static utf8 * file_path = nullptr;
+static std::vector<rct_object_entry> _invalid_entries;
+static int32_t highlighted_index = -1;
+static std::string file_path;
 
 /**
 *  Returns an rct_string_id that represents an rct_object_entry's type.
@@ -109,7 +105,7 @@ static utf8 * file_path = nullptr;
 static rct_string_id get_object_type_string(const rct_object_entry *entry)
 {
     rct_string_id result;
-    uint8 objectType = entry->flags & 0x0F;
+    uint8_t objectType = object_entry_get_type(entry);
     switch (objectType) {
         case OBJECT_TYPE_RIDE:
             result = STR_OBJECT_SELECTION_RIDE_VEHICLES_ATTRACTIONS;
@@ -166,11 +162,11 @@ static void copy_object_names_to_clipboard(rct_window *w)
     utf8 * buffer       = new utf8[buffer_len]{};
 
     size_t cur_len = 0;
-    for (uint16 i = 0; i < w->no_list_items; i++) {
+    for (uint16_t i = 0; i < w->no_list_items; i++) {
         cur_len += (8 + line_sep_len);
         assert(cur_len < buffer_len);
 
-        uint16 nameLength = 8;
+        uint16_t nameLength = 8;
         for (; nameLength > 0; nameLength--)
         {
             if (_invalid_entries[i].name[nameLength - 1] != ' ')
@@ -187,9 +183,7 @@ static void copy_object_names_to_clipboard(rct_window *w)
 
 rct_window * window_object_load_error_open(utf8 * path, size_t numMissingObjects, const rct_object_entry * missingObjects)
 {
-    size_t missingObjectsSize = numMissingObjects * sizeof(rct_object_entry);
-    _invalid_entries = Memory::AllocateArray<rct_object_entry>(numMissingObjects);
-    memcpy(_invalid_entries, missingObjects, missingObjectsSize);
+    _invalid_entries = std::vector<rct_object_entry>(missingObjects, missingObjects + numMissingObjects);
 
     // Check if window is already open
     rct_window * window = window_bring_to_front_by_class(WC_OBJECT_LOAD_ERROR);
@@ -212,8 +206,8 @@ rct_window * window_object_load_error_open(utf8 * path, size_t numMissingObjects
     }
 
     // Refresh list items and path
-    window->no_list_items = (uint16)numMissingObjects;
-    file_path = strndup(path, strnlen(path, MAX_PATH));
+    window->no_list_items = (uint16_t)numMissingObjects;
+    file_path = path;
 
     window_invalidate(window);
     return window;
@@ -221,7 +215,8 @@ rct_window * window_object_load_error_open(utf8 * path, size_t numMissingObjects
 
 static void window_object_load_error_close(rct_window *w)
 {
-    SafeFree(_invalid_entries);
+    _invalid_entries.clear();
+    _invalid_entries.shrink_to_fit();
 }
 
 static void window_object_load_error_update(rct_window *w)
@@ -257,11 +252,11 @@ static void window_object_load_error_mouseup(rct_window *w, rct_widgetindex widg
     }
 }
 
-static void window_object_load_error_scrollmouseover(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y)
+static void window_object_load_error_scrollmouseover(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y)
 {
     // Highlight item that the cursor is over, or remove highlighting if none
-    sint32 selected_item;
-    selected_item = y / 10;
+    int32_t selected_item;
+    selected_item = y / SCROLLABLE_ROW_HEIGHT;
     if (selected_item < 0 || selected_item >= w->no_list_items)
         highlighted_index = -1;
     else
@@ -270,7 +265,7 @@ static void window_object_load_error_scrollmouseover(rct_window *w, sint32 scrol
     widget_invalidate(w, WIDX_SCROLL);
 }
 
-static void window_object_load_error_select_element_from_list(rct_window *w, sint32 index)
+static void window_object_load_error_select_element_from_list(rct_window *w, int32_t index)
 {
     if (index < 0 || index > w->no_list_items) {
         w->selected_list_item = -1;
@@ -281,16 +276,16 @@ static void window_object_load_error_select_element_from_list(rct_window *w, sin
     widget_invalidate(w, WIDX_SCROLL);
 }
 
-static void window_object_load_error_scrollmousedown(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y)
+static void window_object_load_error_scrollmousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y)
 {
-    sint32 selected_item;
-    selected_item = y / 10;
+    int32_t selected_item;
+    selected_item = y / SCROLLABLE_ROW_HEIGHT;
     window_object_load_error_select_element_from_list(w, selected_item);
 }
 
-static void window_object_load_error_scrollgetsize(rct_window *w, sint32 scrollIndex, sint32 *width, sint32 *height)
+static void window_object_load_error_scrollgetsize(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height)
 {
-    *height = w->no_list_items * 10;
+    *height = w->no_list_items * SCROLLABLE_ROW_HEIGHT;
 }
 
 static void window_object_load_error_paint(rct_window *w, rct_drawpixelinfo *dpi)
@@ -303,40 +298,41 @@ static void window_object_load_error_paint(rct_window *w, rct_drawpixelinfo *dpi
 
     // Draw file name
     set_format_arg(0, rct_string_id, STR_OBJECT_ERROR_WINDOW_FILE);
-    set_format_arg(2, utf8*, file_path);
+    set_format_arg(2, utf8*, file_path.c_str());
     gfx_draw_string_left_clipped(dpi, STR_BLACK_STRING, gCommonFormatArgs, COLOUR_BLACK, w->x + 5, w->y + 43, WW-5);
 }
 
-static void window_object_load_error_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, sint32 scrollIndex)
+static void window_object_load_error_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int32_t scrollIndex)
 {
     gfx_fill_rect(dpi, dpi->x, dpi->y, dpi->x + dpi->width - 1, dpi->y + dpi->height - 1, ColourMapA[w->colours[1]].mid_light);
-    const sint32 list_width = w->widgets[WIDX_SCROLL].right - w->widgets[WIDX_SCROLL].left;
+    const int32_t list_width = w->widgets[WIDX_SCROLL].right - w->widgets[WIDX_SCROLL].left;
 
-    for (sint32 i = 0; i < w->no_list_items; i++) {
-        sint32 y = i * 10;
+    for (int32_t i = 0; i < w->no_list_items; i++)
+    {
+        int32_t y = i * SCROLLABLE_ROW_HEIGHT;
         if (y > dpi->y + dpi->height)
             break;
 
-        if (y + 10 < dpi->y)
+        if (y + SCROLLABLE_ROW_HEIGHT < dpi->y)
             continue;
 
         // If hovering over item, change the color and fill the backdrop.
-        if (i == w->selected_list_item) // Currently selected element
-            gfx_fill_rect(dpi, 0, y, list_width, y + LIST_ITEM_HEIGHT - 1, ColourMapA[w->colours[1]].darker | 0x1000000);
-        else if (i == highlighted_index) // Hovering
-            gfx_fill_rect(dpi, 0, y, list_width, y + LIST_ITEM_HEIGHT - 1, ColourMapA[w->colours[1]].mid_dark | 0x1000000);
+        if (i == w->selected_list_item)
+            gfx_fill_rect(dpi, 0, y, list_width, y + SCROLLABLE_ROW_HEIGHT - 1, ColourMapA[w->colours[1]].darker);
+        else if (i == highlighted_index)
+            gfx_fill_rect(dpi, 0, y, list_width, y + SCROLLABLE_ROW_HEIGHT - 1, ColourMapA[w->colours[1]].mid_dark);
         else if ((i & 1) != 0) // odd / even check
-            gfx_fill_rect(dpi, 0, y, list_width, y + LIST_ITEM_HEIGHT - 1, ColourMapA[w->colours[1]].lighter | 0x1000000);
+            gfx_fill_rect(dpi, 0, y, list_width, y + SCROLLABLE_ROW_HEIGHT - 1, ColourMapA[w->colours[1]].light);
 
         // Draw the actual object entry's name...
-        gfx_draw_string(dpi, strndup(_invalid_entries[i].name, 8), COLOUR_DARK_GREEN, NAME_COL_LEFT, y);
+        gfx_draw_string(dpi, strndup(_invalid_entries[i].name, 8), COLOUR_DARK_GREEN, NAME_COL_LEFT - 3, y);
 
         // ... source game ...
         rct_string_id sourceStringId = object_manager_get_source_game_string(&_invalid_entries[i]);
-        gfx_draw_string_left(dpi, sourceStringId, nullptr, COLOUR_DARK_GREEN, SOURCE_COL_LEFT, y);
+        gfx_draw_string_left(dpi, sourceStringId, nullptr, COLOUR_DARK_GREEN, SOURCE_COL_LEFT - 3, y);
 
         // ... and type
         rct_string_id type = get_object_type_string(&_invalid_entries[i]);
-        gfx_draw_string_left(dpi, type, nullptr, COLOUR_DARK_GREEN, TYPE_COL_LEFT, y);
+        gfx_draw_string_left(dpi, type, nullptr, COLOUR_DARK_GREEN, TYPE_COL_LEFT - 3, y);
     }
 }

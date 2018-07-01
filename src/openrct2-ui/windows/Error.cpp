@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/Context.h>
 #include <openrct2/OpenRCT2.h>
@@ -20,10 +13,12 @@
 #include <openrct2-ui/windows/Window.h>
 
 #include <openrct2/audio/audio.h>
-#include <openrct2/drawing/font.h>
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2/drawing/Font.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
+#include <openrct2/drawing/Drawing.h>
 
+// clang-format off
 enum {
     WIDX_BACKGROUND
 };
@@ -66,9 +61,10 @@ static rct_window_event_list window_error_events = {
     window_error_paint,
     nullptr
 };
+// clang-format on
 
 static char _window_error_text[512];
-static uint16 _window_error_num_lines;
+static uint16_t _window_error_num_lines;
 
 /**
  *
@@ -80,7 +76,7 @@ static uint16 _window_error_num_lines;
 rct_window * window_error_open(rct_string_id title, rct_string_id message)
 {
     utf8 *dst;
-    sint32 numLines, fontHeight, x, y, width, height, maxY;
+    int32_t numLines, fontHeight, x, y, width, height, maxY;
     rct_window *w;
 
     window_close_by_class(WC_ERROR);
@@ -113,7 +109,7 @@ rct_window * window_error_open(rct_string_id title, rct_string_id message)
 
     gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
     width = gfx_get_string_width_new_lined(_window_error_text);
-    width = Math::Min(196, width);
+    width = std::min(196, width);
 
     gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
     gfx_wrap_string(_window_error_text, width + 1, &numLines, &fontHeight);
@@ -125,18 +121,18 @@ rct_window * window_error_open(rct_string_id title, rct_string_id message)
     window_error_widgets[WIDX_BACKGROUND].right = width;
     window_error_widgets[WIDX_BACKGROUND].bottom = height;
 
-    sint32 screenWidth = context_get_width();
-    sint32 screenHeight = context_get_height();
+    int32_t screenWidth = context_get_width();
+    int32_t screenHeight = context_get_height();
     const CursorState * state = context_get_cursor_state();
     x = state->x - (width / 2);
     x = Math::Clamp(0, x, screenWidth);
 
     y = state->y + 26;
-    y = Math::Max(22, y);
+    y = std::max(22, y);
     maxY = screenHeight - height;
     if (y > maxY) {
         y = y - height - 40;
-        y = Math::Min(y, maxY);
+        y = std::min(y, maxY);
     }
 
     w = window_create(x, y, width, height, &window_error_events, WC_ERROR, WF_STICK_TO_FRONT | WF_TRANSPARENT | WF_RESIZABLE);
@@ -166,7 +162,7 @@ static void window_error_unknown5(rct_window *w)
  */
 static void window_error_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
-    sint32 t, l, r, b;
+    int32_t t, l, r, b;
 
     l = w->x;
     t = w->y;

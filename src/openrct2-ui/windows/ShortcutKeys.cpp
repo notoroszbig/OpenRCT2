@@ -1,25 +1,19 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/config/Config.h>
 #include <openrct2-ui/input/KeyboardShortcuts.h>
 #include "Window.h"
 
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
+#include <openrct2/drawing/Drawing.h>
 
 #define WW 420
 #define WH 280
@@ -27,6 +21,7 @@
 #define WW_SC_MAX 1200
 #define WH_SC_MAX 800
 
+// clang-format off
 enum WINDOW_SHORTCUT_WIDGET_IDX {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -41,7 +36,7 @@ static rct_widget window_shortcut_widgets[] = {
     { WWT_CAPTION,          0,  1,      WW - 2, 1,      14,         STR_SHORTCUTS_TITLE,        STR_WINDOW_TITLE_TIP },
     { WWT_CLOSEBOX,         0,  WW-13,  WW - 3, 2,      13,         STR_CLOSE_X,                STR_CLOSE_WINDOW_TIP },
     { WWT_SCROLL,           0,  4,      WW - 5, 18,     WH - 18,    SCROLL_VERTICAL,            STR_SHORTCUT_LIST_TIP },
-    { WWT_DROPDOWN_BUTTON,  0,  4,      153,    WH-15,  WH - 4,     STR_SHORTCUT_ACTION_RESET,  STR_SHORTCUT_ACTION_RESET_TIP },
+    { WWT_BUTTON,           0,  4,      153,    WH-15,  WH - 4,     STR_SHORTCUT_ACTION_RESET,  STR_SHORTCUT_ACTION_RESET_TIP },
     { WIDGETS_END }
 };
 
@@ -50,10 +45,10 @@ static void window_shortcut_resize(rct_window *w);
 static void window_shortcut_invalidate(rct_window *w);
 static void window_shortcut_paint(rct_window *w, rct_drawpixelinfo *dpi);
 static void window_shortcut_tooltip(rct_window* w, rct_widgetindex widgetIndex, rct_string_id *stringId);
-static void window_shortcut_scrollgetsize(rct_window *w, sint32 scrollIndex, sint32 *width, sint32 *height);
-static void window_shortcut_scrollmousedown(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y);
-static void window_shortcut_scrollmouseover(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y);
-static void window_shortcut_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, sint32 scrollIndex);
+static void window_shortcut_scrollgetsize(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height);
+static void window_shortcut_scrollmousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
+static void window_shortcut_scrollmouseover(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
+static void window_shortcut_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int32_t scrollIndex);
 
 static rct_window_event_list window_shortcut_events = {
     nullptr,
@@ -86,8 +81,6 @@ static rct_window_event_list window_shortcut_events = {
     window_shortcut_scrollpaint
 };
 
-extern "C"
-{
 const rct_string_id ShortcutStringIds[SHORTCUT_COUNT] = {
     STR_SHORTCUT_CLOSE_TOP_MOST_WINDOW,
     STR_SHORTCUT_CLOSE_ALL_FLOATING_WINDOWS,
@@ -154,8 +147,11 @@ const rct_string_id ShortcutStringIds[SHORTCUT_COUNT] = {
     STR_LOAD_GAME,
     STR_SHORTCUT_CLEAR_SCENERY,
     STR_SHORTCUT_GRIDLINES_DISPLAY_TOGGLE,
+    STR_SHORTCUT_VIEW_CLIPPING,
+    STR_SHORTCUT_HIGHLIGHT_PATH_ISSUES_TOGGLE,
 };
-}
+// clang-format on
+
 
 /**
  *
@@ -240,7 +236,7 @@ static void window_shortcut_tooltip(rct_window* w, rct_widgetindex widgetIndex, 
 *
 *  rct2: 0x006E3A07
 */
-static void window_shortcut_scrollgetsize(rct_window *w, sint32 scrollIndex, sint32 *width, sint32 *height)
+static void window_shortcut_scrollgetsize(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height)
 {
     *height = w->no_list_items * SCROLLABLE_ROW_HEIGHT;
 }
@@ -249,9 +245,9 @@ static void window_shortcut_scrollgetsize(rct_window *w, sint32 scrollIndex, sin
 *
 *  rct2: 0x006E3A3E
 */
-static void window_shortcut_scrollmousedown(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y)
+static void window_shortcut_scrollmousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y)
 {
-    sint32 selected_item = (y - 1) / SCROLLABLE_ROW_HEIGHT;
+    int32_t selected_item = (y - 1) / SCROLLABLE_ROW_HEIGHT;
     if (selected_item >= w->no_list_items)
         return;
 
@@ -262,9 +258,9 @@ static void window_shortcut_scrollmousedown(rct_window *w, sint32 scrollIndex, s
 *
 *  rct2: 0x006E3A16
 */
-static void window_shortcut_scrollmouseover(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y)
+static void window_shortcut_scrollmouseover(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y)
 {
-    sint32 selected_item = (y - 1) / SCROLLABLE_ROW_HEIGHT;
+    int32_t selected_item = (y - 1) / SCROLLABLE_ROW_HEIGHT;
     if (selected_item >= w->no_list_items)
         return;
 
@@ -277,13 +273,13 @@ static void window_shortcut_scrollmouseover(rct_window *w, sint32 scrollIndex, s
  *
  *  rct2: 0x006E38E6
  */
-static void window_shortcut_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, sint32 scrollIndex)
+static void window_shortcut_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int32_t scrollIndex)
 {
     gfx_fill_rect(dpi, dpi->x, dpi->y, dpi->x + dpi->width - 1, dpi->y + dpi->height - 1, ColourMapA[w->colours[1]].mid_light);
 
-    for (sint32 i = 0; i < w->no_list_items; ++i)
+    for (int32_t i = 0; i < w->no_list_items; ++i)
     {
-        sint32 y = 1 + i * SCROLLABLE_ROW_HEIGHT;
+        int32_t y = 1 + i * SCROLLABLE_ROW_HEIGHT;
         if (y > dpi->y + dpi->height)
         {
             break;
@@ -294,7 +290,7 @@ static void window_shortcut_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, s
             continue;
         }
 
-        sint32 format = STR_BLACK_STRING;
+        int32_t format = STR_BLACK_STRING;
         if (i == w->selected_list_item)
         {
             format = STR_WINDOW_COLOUR_2_STRINGID;

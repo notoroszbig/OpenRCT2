@@ -6,21 +6,25 @@ endif ()
 
 # Sources
 file(GLOB_RECURSE OPENRCT2_CLI_SOURCES
-    "${CMAKE_CURRENT_LIST_DIR}/*.c"
     "${CMAKE_CURRENT_LIST_DIR}/*.cpp"
     "${CMAKE_CURRENT_LIST_DIR}/*.h"
     "${CMAKE_CURRENT_LIST_DIR}/*.hpp")
 
 # Outputs
 set (PROJECT openrct2-cli)
-project(${PROJECT})
-add_executable(${PROJECT} EXCLUDE_FROM_ALL ${OPENRCT2_CLI_SOURCES})
+project(${PROJECT} CXX)
+add_executable(${PROJECT} ${OPENRCT2_CLI_SOURCES})
 
 target_link_libraries(${PROJECT} "libopenrct2")
 
+# Needed for interactive console
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(${PROJECT} Threads::Threads)
+
+if (APPLE)
+    target_link_libraries(${PROJECT} "-framework Cocoa")
+endif ()
+
 # Includes
 target_include_directories(${PROJECT} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/..")
-
-# Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14")

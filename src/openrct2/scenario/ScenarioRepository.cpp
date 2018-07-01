@@ -1,22 +1,16 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <algorithm>
 #include <memory>
 #include <vector>
+#include "../Context.h"
 #include "../core/Console.hpp"
 #include "../core/File.h"
 #include "../core/FileIndex.hpp"
@@ -32,13 +26,16 @@
 #include "ScenarioSources.h"
 
 #include "../config/Config.h"
-#include "../localisation/localisation.h"
+#include "../localisation/Language.h"
+#include "../localisation/Localisation.h"
+#include "../localisation/LocalisationService.h"
 #include "../platform/platform.h"
-#include "scenario.h"
+#include "Scenario.h"
+#include "../Game.h"
 
 using namespace OpenRCT2;
 
-static sint32 ScenarioCategoryCompare(sint32 categoryA, sint32 categoryB)
+static int32_t ScenarioCategoryCompare(int32_t categoryA, int32_t categoryB)
 {
     if (categoryA == categoryB) return 0;
     if (categoryA == SCENARIO_CATEGORY_DLC) return -1;
@@ -48,7 +45,7 @@ static sint32 ScenarioCategoryCompare(sint32 categoryA, sint32 categoryB)
     return Math::Sign(categoryA - categoryB);
 }
 
-static sint32 scenario_index_entry_CompareByCategory(const scenario_index_entry &entryA,
+static int32_t scenario_index_entry_CompareByCategory(const scenario_index_entry &entryA,
                                                   const scenario_index_entry &entryB)
 {
     // Order by category
@@ -71,7 +68,7 @@ static sint32 scenario_index_entry_CompareByCategory(const scenario_index_entry 
     }
 }
 
-static sint32 scenario_index_entry_CompareByIndex(const scenario_index_entry &entryA,
+static int32_t scenario_index_entry_CompareByIndex(const scenario_index_entry &entryA,
                                                const scenario_index_entry &entryB)
 {
     // Order by source game
@@ -81,7 +78,7 @@ static sint32 scenario_index_entry_CompareByIndex(const scenario_index_entry &en
     }
 
     // Then by index / category / name
-    uint8 sourceGame = entryA.source_game;
+    uint8_t sourceGame = entryA.source_game;
     switch (sourceGame) {
     default:
         if (entryA.source_index == -1 && entryB.source_index == -1)
@@ -122,26 +119,26 @@ static void scenario_highscore_free(scenario_highscore_entry * highscore)
 class ScenarioFileIndex final : public FileIndex<scenario_index_entry>
 {
 private:
-    static constexpr uint32 MAGIC_NUMBER = 0x58444953; // SIDX
-    static constexpr uint16 VERSION = 2;
+    static constexpr uint32_t MAGIC_NUMBER = 0x58444953; // SIDX
+    static constexpr uint16_t VERSION = 3;
     static constexpr auto PATTERN = "*.sc4;*.sc6";
-    
+
 public:
-    ScenarioFileIndex(IPlatformEnvironment * env) :
+    explicit ScenarioFileIndex(const IPlatformEnvironment& env) :
         FileIndex("scenario index",
                   MAGIC_NUMBER,
                   VERSION,
-                  env->GetFilePath(PATHID::CACHE_SCENARIOS),
+                  env.GetFilePath(PATHID::CACHE_SCENARIOS),
                   std::string(PATTERN),
                   std::vector<std::string>({
-                      env->GetDirectoryPath(DIRBASE::RCT1, DIRID::SCENARIO),
-                      env->GetDirectoryPath(DIRBASE::RCT2, DIRID::SCENARIO),
-                      env->GetDirectoryPath(DIRBASE::USER, DIRID::SCENARIO) }))
+                      env.GetDirectoryPath(DIRBASE::RCT1, DIRID::SCENARIO),
+                      env.GetDirectoryPath(DIRBASE::RCT2, DIRID::SCENARIO),
+                      env.GetDirectoryPath(DIRBASE::USER, DIRID::SCENARIO) }))
     {
     }
 
 protected:
-    std::tuple<bool, scenario_index_entry> Create(const std::string &path) const override
+    std::tuple<bool, scenario_index_entry> Create(int32_t, const std::string &path) const override
     {
         scenario_index_entry entry;
         auto timestamp = File::GetLastModified(path);
@@ -170,6 +167,7 @@ protected:
         stream->WriteValue(item.objective_arg_2);
         stream->WriteValue(item.objective_arg_3);
 
+        stream->Write(item.internal_name, sizeof(item.internal_name));
         stream->Write(item.name, sizeof(item.name));
         stream->Write(item.details, sizeof(item.details));
     }
@@ -179,19 +177,20 @@ protected:
         scenario_index_entry item;
 
         stream->Read(item.path, sizeof(item.path));
-        item.timestamp = stream->ReadValue<uint64>();
+        item.timestamp = stream->ReadValue<uint64_t>();
 
-        item.category = stream->ReadValue<uint8>();
-        item.source_game = stream->ReadValue<uint8>();
-        item.source_index = stream->ReadValue<sint16>();
-        item.sc_id = stream->ReadValue<uint16>();
+        item.category = stream->ReadValue<uint8_t>();
+        item.source_game = stream->ReadValue<uint8_t>();
+        item.source_index = stream->ReadValue<int16_t>();
+        item.sc_id = stream->ReadValue<uint16_t>();
 
-        item.objective_type = stream->ReadValue<uint8>();
-        item.objective_arg_1 = stream->ReadValue<uint8>();
-        item.objective_arg_2 = stream->ReadValue<sint32>();
-        item.objective_arg_3 = stream->ReadValue<sint16>();
+        item.objective_type = stream->ReadValue<uint8_t>();
+        item.objective_arg_1 = stream->ReadValue<uint8_t>();
+        item.objective_arg_2 = stream->ReadValue<int32_t>();
+        item.objective_arg_3 = stream->ReadValue<int16_t>();
         item.highscore = nullptr;
 
+        stream->Read(item.internal_name, sizeof(item.internal_name));
         stream->Read(item.name, sizeof(item.name));
         stream->Read(item.details, sizeof(item.details));
 
@@ -202,7 +201,7 @@ private:
     /**
      * Reads basic information from a scenario file.
      */
-    static bool GetScenarioInfo(const std::string &path, uint64 timestamp, scenario_index_entry * entry)
+    static bool GetScenarioInfo(const std::string &path, uint64_t timestamp, scenario_index_entry * entry)
     {
         log_verbose("GetScenarioInfo(%s, %d, ...)", path.c_str(), timestamp);
         try
@@ -214,7 +213,7 @@ private:
                 bool result = false;
                 try
                 {
-                    auto s4Importer = std::unique_ptr<IParkImporter>(ParkImporter::CreateS4());
+                    auto s4Importer = ParkImporter::CreateS4();
                     s4Importer->LoadScenario(path.c_str(), true);
                     if (s4Importer->GetDetails(entry))
                     {
@@ -223,7 +222,7 @@ private:
                         result = true;
                     }
                 }
-                catch (Exception)
+                catch (const std::exception &)
                 {
                 }
                 return result;
@@ -233,11 +232,13 @@ private:
                 // RCT2 scenario
                 auto fs = FileStream(path, FILE_MODE_OPEN);
                 auto chunkReader = SawyerChunkReader(&fs);
- 
+
                 rct_s6_header header = chunkReader.ReadChunkAs<rct_s6_header>();
                 if (header.type == S6_TYPE_SCENARIO)
                 {
                     rct_s6_info info = chunkReader.ReadChunkAs<rct_s6_info>();
+                    rct2_to_utf8_self(info.name, sizeof(info.name));
+                    rct2_to_utf8_self(info.details, sizeof(info.details));
                     *entry = CreateNewScenarioEntry(path, timestamp, &info);
                     return true;
                 }
@@ -247,16 +248,16 @@ private:
                 }
             }
         }
-        catch (Exception)
+        catch (const std::exception &)
         {
             Console::Error::WriteLine("Unable to read scenario: '%s'", path.c_str());
         }
         return false;
     }
 
-    static scenario_index_entry CreateNewScenarioEntry(const std::string &path, uint64 timestamp, rct_s6_info * s6Info)
+    static scenario_index_entry CreateNewScenarioEntry(const std::string &path, uint64_t timestamp, rct_s6_info * s6Info)
     {
-        scenario_index_entry entry = { 0 };
+        scenario_index_entry entry = {};
 
         // Set new entry
         String::Set(entry.path, sizeof(entry.path), path.c_str());
@@ -278,6 +279,9 @@ private:
             // Normalise the name to make the scenario as recognisable as possible.
             ScenarioSources::NormaliseName(entry.name, sizeof(entry.name), entry.name);
         }
+
+		// entry.name will be translated later so keep the untranslated name here
+		String::Set(entry.internal_name, sizeof(entry.internal_name), entry.name);
 
         String::Set(entry.details, sizeof(entry.details), s6Info->details);
 
@@ -312,17 +316,17 @@ private:
 class ScenarioRepository final : public IScenarioRepository
 {
 private:
-    static constexpr uint32 HighscoreFileVersion = 1;
+    static constexpr uint32_t HighscoreFileVersion = 1;
 
-    IPlatformEnvironment * const _env;
+    std::shared_ptr<IPlatformEnvironment> const _env;
     ScenarioFileIndex const _fileIndex;
     std::vector<scenario_index_entry> _scenarios;
     std::vector<scenario_highscore_entry*> _highscores;
 
 public:
-    ScenarioRepository(IPlatformEnvironment * env)
+    explicit ScenarioRepository(const std::shared_ptr<IPlatformEnvironment>& env)
         : _env(env),
-          _fileIndex(env)
+          _fileIndex(*env)
     {
     }
 
@@ -331,13 +335,13 @@ public:
         ClearHighscores();
     }
 
-    void Scan() override
+    void Scan(int32_t language) override
     {
         ImportMegaPark();
 
         // Reload scenarios from index
         _scenarios.clear();
-        auto scenarios = _fileIndex.LoadOrBuild();
+        auto scenarios = _fileIndex.LoadOrBuild(language);
         for (auto scenario : scenarios)
         {
             AddScenario(scenario);
@@ -380,6 +384,21 @@ public:
         return nullptr;
     }
 
+	const scenario_index_entry * GetByInternalName(const utf8 * name) const override {
+		for (size_t i = 0; i < _scenarios.size(); i++) {
+			const scenario_index_entry * scenario = &_scenarios[i];
+
+			if (scenario->source_game == SCENARIO_SOURCE_OTHER && scenario->sc_id == SC_UNIDENTIFIED)
+				continue;
+
+			// Note: this is always case insensitive search for cross platform consistency
+			if (String::Equals(name, scenario->internal_name, true)) {
+				return &_scenarios[i];
+			}
+		}
+		return nullptr;
+	}
+
     const scenario_index_entry * GetByPath(const utf8 * path) const override
     {
         for (const auto &scenario : _scenarios)
@@ -392,11 +411,11 @@ public:
         return nullptr;
     }
 
-    bool TryRecordHighscore(const utf8 * scenarioFileName, money32 companyValue, const utf8 * name) override
+    bool TryRecordHighscore(int32_t language, const utf8 * scenarioFileName, money32 companyValue, const utf8 * name) override
     {
         // Scan the scenarios so we have a fresh list to query. This is to prevent the issue of scenario completions
         // not getting recorded, see #4951.
-        Scan();
+        Scan(language);
 
         scenario_index_entry * scenario = GetByFilename(scenarioFileName);
         if (scenario != nullptr)
@@ -461,25 +480,23 @@ private:
 
     /**
      * Converts Mega Park to normalised file location (mp.dat to sc21.sc4)
-     * @param Full path to mp.dat
-     * @param Full path to sc21.dat
+     * @param srcPath Full path to mp.dat
+     * @param dstPath Full path to sc21.dat
      */
     void ConvertMegaPark(const std::string &srcPath, const std::string &dstPath)
     {
         auto directory = Path::GetDirectory(dstPath);
         platform_ensure_directory_exists(directory.c_str());
 
-        size_t length;
-        auto mpdat = (uint8 *)(File::ReadAllBytes(srcPath, &length));
+        auto mpdat = File::ReadAllBytes(srcPath);
 
         // Rotate each byte of mp.dat left by 4 bits to convert
-        for (size_t i = 0; i < length; i++)
+        for (size_t i = 0; i < mpdat.size(); i++)
         {
             mpdat[i] = rol8(mpdat[i], 4);
         }
 
-        File::WriteAllBytes(dstPath, mpdat, length);
-        Memory::FreeArray(mpdat, length);
+        File::WriteAllBytes(dstPath, mpdat.data(), mpdat.size());
     }
 
     void AddScenario(const scenario_index_entry &entry)
@@ -549,7 +566,7 @@ private:
         try
         {
             auto fs = FileStream(path, FILE_MODE_OPEN);
-            uint32 fileVersion = fs.ReadValue<uint32>();
+            uint32_t fileVersion = fs.ReadValue<uint32_t>();
             if (fileVersion != 1)
             {
                 Console::Error::WriteLine("Invalid or incompatible highscores file.");
@@ -558,8 +575,8 @@ private:
 
             ClearHighscores();
 
-            uint32 numHighscores = fs.ReadValue<uint32>();
-            for (uint32 i = 0; i < numHighscores; i++)
+            uint32_t numHighscores = fs.ReadValue<uint32_t>();
+            for (uint32_t i = 0; i < numHighscores; i++)
             {
                 scenario_highscore_entry * highscore = InsertHighscore();
                 highscore->fileName = fs.ReadString();
@@ -568,7 +585,7 @@ private:
                 highscore->timestamp = fs.ReadValue<datetime64>();
             }
         }
-        catch (const Exception &)
+        catch (const std::exception &)
         {
             Console::Error::WriteLine("Error reading highscores.");
         }
@@ -605,7 +622,7 @@ private:
 
             // Load header
             auto header = fs.ReadValue<rct_scores_header>();
-            for (uint32 i = 0; i < header.ScenarioCount; i++)
+            for (uint32_t i = 0; i < header.ScenarioCount; i++)
             {
                 // Read legacy entry
                 auto scBasic = fs.ReadValue<rct_scores_entry>();
@@ -624,7 +641,8 @@ private:
                             if (scBasic.CompanyValue > highscore->company_value)
                             {
                                 SafeFree(highscore->name);
-                                highscore->name = win1252_to_utf8_alloc(scBasic.CompletedBy, Util::CountOf(scBasic.CompletedBy));
+                                std::string name = rct2_to_utf8(scBasic.CompletedBy, RCT2_LANGUAGE_ID_ENGLISH_UK);
+                                highscore->name = String::Duplicate(name.c_str());
                                 highscore->company_value = scBasic.CompanyValue;
                                 highscore->timestamp = DATETIME64_MIN;
                                 break;
@@ -635,14 +653,15 @@ private:
                     {
                         scenario_highscore_entry * highscore = InsertHighscore();
                         highscore->fileName = String::Duplicate(scBasic.Path);
-                        highscore->name = win1252_to_utf8_alloc(scBasic.CompletedBy, Util::CountOf(scBasic.CompletedBy));
+                        std::string name = rct2_to_utf8(scBasic.CompletedBy, RCT2_LANGUAGE_ID_ENGLISH_UK);
+                        highscore->name = String::Duplicate(name.c_str());
                         highscore->company_value = scBasic.CompanyValue;
                         highscore->timestamp = DATETIME64_MIN;
                     }
                 }
             }
         }
-        catch (const Exception &)
+        catch (const std::exception &)
         {
             Console::Error::WriteLine("Error reading legacy scenario scores file: '%s'", path.c_str());
         }
@@ -688,8 +707,8 @@ private:
         try
         {
             auto fs = FileStream(path, FILE_MODE_WRITE);
-            fs.WriteValue<uint32>(HighscoreFileVersion);
-            fs.WriteValue<uint32>((uint32)_highscores.size());
+            fs.WriteValue<uint32_t>(HighscoreFileVersion);
+            fs.WriteValue<uint32_t>((uint32_t)_highscores.size());
             for (size_t i = 0; i < _highscores.size(); i++)
             {
                 const scenario_highscore_entry * highscore = _highscores[i];
@@ -699,49 +718,44 @@ private:
                 fs.WriteValue(highscore->timestamp);
             }
         }
-        catch (const Exception &)
+        catch (const std::exception &)
         {
             Console::Error::WriteLine("Unable to save highscores to '%s'", path.c_str());
         }
     }
 };
 
-static ScenarioRepository * _scenarioRepository;
-
-IScenarioRepository * CreateScenarioRepository(IPlatformEnvironment * env)
+std::unique_ptr<IScenarioRepository> CreateScenarioRepository(const std::shared_ptr<IPlatformEnvironment>& env)
 {
-    _scenarioRepository = new ScenarioRepository(env);
-    return _scenarioRepository;
+    return std::make_unique<ScenarioRepository>(env);
 }
 
 IScenarioRepository * GetScenarioRepository()
 {
-    return _scenarioRepository;
+    return GetContext()->GetScenarioRepository();
 }
 
-extern "C"
+void scenario_repository_scan()
 {
-    void scenario_repository_scan()
-    {
-        IScenarioRepository * repo = GetScenarioRepository();
-        repo->Scan();
-    }
-
-    size_t scenario_repository_get_count()
-    {
-        IScenarioRepository * repo = GetScenarioRepository();
-        return repo->GetCount();
-    }
-
-    const scenario_index_entry *scenario_repository_get_by_index(size_t index)
-    {
-        IScenarioRepository * repo = GetScenarioRepository();
-        return repo->GetByIndex(index);
-    }
-
-    bool scenario_repository_try_record_highscore(const utf8 * scenarioFileName, money32 companyValue, const utf8 * name)
-    {
-        IScenarioRepository * repo = GetScenarioRepository();
-        return repo->TryRecordHighscore(scenarioFileName, companyValue, name);
-    }
+    IScenarioRepository * repo = GetScenarioRepository();
+    repo->Scan(LocalisationService_GetCurrentLanguage());
 }
+
+size_t scenario_repository_get_count()
+{
+    IScenarioRepository * repo = GetScenarioRepository();
+    return repo->GetCount();
+}
+
+const scenario_index_entry *scenario_repository_get_by_index(size_t index)
+{
+    IScenarioRepository * repo = GetScenarioRepository();
+    return repo->GetByIndex(index);
+}
+
+bool scenario_repository_try_record_highscore(const utf8 * scenarioFileName, money32 companyValue, const utf8 * name)
+{
+    IScenarioRepository * repo = GetScenarioRepository();
+    return repo->TryRecordHighscore(LocalisationService_GetCurrentLanguage(), scenarioFileName, companyValue, name);
+}
+

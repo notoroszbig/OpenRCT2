@@ -1,28 +1,25 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/Context.h>
 #include <openrct2/core/Math.hpp>
 #include <openrct2-ui/windows/Window.h>
 
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2-ui/interface/Dropdown.h>
 #include <openrct2-ui/interface/LandTool.h>
+#include <openrct2/drawing/Drawing.h>
+#include <openrct2/world/Park.h>
+#include <openrct2/world/Surface.h>
 
+// clang-format off
 enum WINDOW_LAND_WIDGET_IDX {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -35,8 +32,6 @@ enum WINDOW_LAND_WIDGET_IDX {
     WIDX_FLOOR,
     WIDX_WALL,
 };
-
-validate_global_widx(WC_LAND, WIDX_PREVIEW);
 
 static rct_widget window_land_widgets[] = {
     { WWT_FRAME,    0,  0,  97, 0,  159,        0xFFFFFFFF,                             STR_NONE },                     // panel / background
@@ -58,7 +53,7 @@ static rct_widget window_land_widgets[] = {
 static void window_land_close(rct_window *w);
 static void window_land_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_land_mousedown(rct_window *w, rct_widgetindex widgetIndex, rct_widget* widget);
-static void window_land_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex);
+static void window_land_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
 static void window_land_update(rct_window *w);
 static void window_land_invalidate(rct_window *w);
 static void window_land_paint(rct_window *w, rct_drawpixelinfo *dpi);
@@ -95,9 +90,10 @@ static rct_window_event_list window_land_events = {
     window_land_paint,
     nullptr
 };
+// clang-format on
 
-static sint32 _selectedFloorTexture;
-static sint32 _selectedWallTexture;
+static int32_t _selectedFloorTexture;
+static int32_t _selectedWallTexture;
 
 /**
  *
@@ -132,8 +128,8 @@ rct_window * window_land_open()
     gLandToolTerrainEdge = 255;
     gLandMountainMode = false;
     gLandPaintMode = false;
-    _selectedFloorTexture = 0;
-    _selectedWallTexture = 0;
+    _selectedFloorTexture = TERRAIN_GRASS;
+    _selectedWallTexture = TERRAIN_EDGE_ROCK;
     gLandToolRaiseCost = MONEY32_UNDEFINED;
     gLandToolLowerCost = MONEY32_UNDEFINED;
 
@@ -195,14 +191,14 @@ static void window_land_mousedown(rct_window *w, rct_widgetindex widgetIndex, rc
         break;
     case WIDX_DECREMENT:
         // Decrement land tool size
-        gLandToolSize = Math::Max(MINIMUM_TOOL_SIZE, gLandToolSize - 1);
+        gLandToolSize = std::max(MINIMUM_TOOL_SIZE, gLandToolSize - 1);
 
         // Invalidate the window
         window_invalidate(w);
         break;
     case WIDX_INCREMENT:
         // Increment land tool size
-        gLandToolSize = Math::Min(MAXIMUM_TOOL_SIZE, gLandToolSize + 1);
+        gLandToolSize = std::min(MAXIMUM_TOOL_SIZE, gLandToolSize + 1);
 
         // Invalidate the window
         window_invalidate(w);
@@ -214,9 +210,9 @@ static void window_land_mousedown(rct_window *w, rct_widgetindex widgetIndex, rc
  *
  *  rct2: 0x00664090
  */
-static void window_land_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex)
+static void window_land_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex)
 {
-    sint32 type;
+    int32_t type;
 
     switch (widgetIndex) {
     case WIDX_FLOOR:
@@ -225,7 +221,7 @@ static void window_land_dropdown(rct_window *w, rct_widgetindex widgetIndex, sin
 
         type = (dropdownIndex == -1) ?
             _selectedFloorTexture :
-            (uint32)gDropdownItemsArgs[dropdownIndex] - SPR_FLOOR_TEXTURE_GRASS;
+            (uint32_t)gDropdownItemsArgs[dropdownIndex] - SPR_FLOOR_TEXTURE_GRASS;
 
         if (gLandToolTerrainSurface == type) {
             gLandToolTerrainSurface = 255;
@@ -239,9 +235,7 @@ static void window_land_dropdown(rct_window *w, rct_widgetindex widgetIndex, sin
         if (dropdownIndex == -1)
             dropdownIndex = gDropdownHighlightedIndex;
 
-        type = (dropdownIndex == -1) ?
-            _selectedWallTexture :
-            (uint32)gDropdownItemsArgs[dropdownIndex] - SPR_WALL_TEXTURE_ROCK;
+        type = (dropdownIndex == -1) ?_selectedWallTexture : WallTextureOrder[dropdownIndex];
 
         if (gLandToolTerrainEdge == type) {
             gLandToolTerrainEdge = 255;
@@ -256,7 +250,7 @@ static void window_land_dropdown(rct_window *w, rct_widgetindex widgetIndex, sin
 
 static void window_land_textinput(rct_window *w, rct_widgetindex widgetIndex, char *text)
 {
-    sint32 size;
+    int32_t size;
     char* end;
 
     if (widgetIndex != WIDX_PREVIEW || text == nullptr)
@@ -264,8 +258,8 @@ static void window_land_textinput(rct_window *w, rct_widgetindex widgetIndex, ch
 
     size = strtol(text, &end, 10);
     if (*end == '\0') {
-        size = Math::Max(MINIMUM_TOOL_SIZE,size);
-        size = Math::Min(MAXIMUM_TOOL_SIZE,size);
+        size = std::max(MINIMUM_TOOL_SIZE,size);
+        size = std::min(MAXIMUM_TOOL_SIZE,size);
         gLandToolSize = size;
 
         window_invalidate(w);
@@ -306,7 +300,7 @@ static void window_land_invalidate(rct_window *w)
         w->pressed_widgets |= (1 << WIDX_PAINTMODE);
 
     window_land_widgets[WIDX_FLOOR].image = SPR_FLOOR_TEXTURE_GRASS + _selectedFloorTexture;
-    window_land_widgets[WIDX_WALL].image = SPR_WALL_TEXTURE_ROCK + _selectedWallTexture;
+    window_land_widgets[WIDX_WALL].image = WallTexturePreviews[_selectedWallTexture];
     // Update the preview image (for tool sizes up to 7)
     window_land_widgets[WIDX_PREVIEW].image = land_tool_size_to_sprite_index(gLandToolSize);
 }
@@ -317,7 +311,7 @@ static void window_land_invalidate(rct_window *w)
  */
 static void window_land_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
-    sint32 x, y, numTiles;
+    int32_t x, y, numTiles;
     money32 price;
     rct_widget *previewWidget = &window_land_widgets[WIDX_PREVIEW];
 

@@ -1,29 +1,23 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
+#include <algorithm>
+#include <vector>
 #include <openrct2/common.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <openrct2/core/Math.hpp>
-#include <openrct2/core/Memory.hpp>
 #include <openrct2/audio/AudioMixer.h>
 #include <openrct2/audio/AudioSource.h>
 #include "AudioContext.h"
 #include "AudioFormat.h"
 
-namespace OpenRCT2 { namespace Audio
+namespace OpenRCT2::Audio
 {
     /**
      * An audio source where raw PCM data is initially loaded into RAM from
@@ -32,10 +26,15 @@ namespace OpenRCT2 { namespace Audio
     class MemoryAudioSource final : public ISDLAudioSource
     {
     private:
-        AudioFormat _format = { 0 };
-        uint8 *     _data = nullptr;
-        size_t      _length = 0;
-        bool        _isSDLWav = false;
+        AudioFormat         _format = {};
+        std::vector<uint8_t>  _data;
+        uint8_t *             _dataSDL = nullptr;
+        size_t              _length = 0;
+
+        const uint8_t * GetData()
+        {
+            return _dataSDL != nullptr ? _dataSDL : _data.data();
+        }
 
     public:
         ~MemoryAudioSource()
@@ -43,7 +42,7 @@ namespace OpenRCT2 { namespace Audio
             Unload();
         }
 
-        uint64 GetLength() const override
+        uint64_t GetLength() const override
         {
             return _length;
         }
@@ -53,13 +52,18 @@ namespace OpenRCT2 { namespace Audio
             return _format;
         }
 
-        size_t Read(void * dst, uint64 offset, size_t len) override
+        size_t Read(void * dst, uint64_t offset, size_t len) override
         {
             size_t bytesToRead = 0;
             if (offset < _length)
             {
-                bytesToRead = (size_t)Math::Min<uint64>(len, _length - offset);
-                Memory::Copy<void>(dst, _data + offset, bytesToRead);
+                bytesToRead = (size_t)std::min<uint64_t>(len, _length - offset);
+
+                auto src = GetData();
+                if (src != nullptr)
+                {
+                    std::copy_n(src + offset, bytesToRead, (uint8_t *)dst);
+                }
             }
             return bytesToRead;
         }
@@ -74,16 +78,15 @@ namespace OpenRCT2 { namespace Audio
             SDL_RWops * rw = SDL_RWFromFile(path, "rb");
             if (rw != nullptr)
             {
-                SDL_AudioSpec audiospec = { 0 };
-                uint32 audioLen;
-                SDL_AudioSpec * spec = SDL_LoadWAV_RW(rw, false, &audiospec, &_data, &audioLen);
+                SDL_AudioSpec audiospec = {};
+                uint32_t audioLen;
+                SDL_AudioSpec * spec = SDL_LoadWAV_RW(rw, false, &audiospec, &_dataSDL, &audioLen);
                 if (spec != nullptr)
                 {
                     _format.freq = spec->freq;
                     _format.format = spec->format;
                     _format.channels = spec->channels;
                     _length = audioLen;
-                    _isSDLWav = true;
                     result = true;
                 }
                 else
@@ -109,17 +112,17 @@ namespace OpenRCT2 { namespace Audio
             SDL_RWops * rw = SDL_RWFromFile(path, "rb");
             if (rw != nullptr)
             {
-                uint32 numSounds;
+                uint32_t numSounds;
                 SDL_RWread(rw, &numSounds, sizeof(numSounds), 1);
                 if (index < numSounds)
                 {
                     SDL_RWseek(rw, index * 4, RW_SEEK_CUR);
 
-                    uint32 pcmOffset;
+                    uint32_t pcmOffset;
                     SDL_RWread(rw, &pcmOffset, sizeof(pcmOffset), 1);
                     SDL_RWseek(rw, pcmOffset, RW_SEEK_SET);
 
-                    uint32 pcmSize;
+                    uint32_t pcmSize;
                     SDL_RWread(rw, &pcmSize, sizeof(pcmSize), 1);
                     _length = pcmSize;
 
@@ -129,13 +132,13 @@ namespace OpenRCT2 { namespace Audio
                     _format.format = AUDIO_S16LSB;
                     _format.channels = waveFormat.channels;
 
-                    _data = new (std::nothrow) uint8[_length];
-                    if (_data != nullptr)
+                    try
                     {
-                        SDL_RWread(rw, _data, _length, 1);
+                        _data.resize(_length);
+                        SDL_RWread(rw, _data.data(), _length, 1);
                         result = true;
                     }
-                    else
+                    catch (const std::bad_alloc &)
                     {
                         log_verbose("Unable to allocate data");
                     }
@@ -156,20 +159,20 @@ namespace OpenRCT2 { namespace Audio
                 SDL_AudioCVT cvt;
                 if (SDL_BuildAudioCVT(&cvt, _format.format, _format.channels, _format.freq, format->format, format->channels, format->freq) >= 0)
                 {
-                    cvt.len = (sint32)_length;
-                    cvt.buf = new uint8[cvt.len * cvt.len_mult];
-                    Memory::Copy(cvt.buf, _data, _length);
+                    auto src = GetData();
+                    auto cvtBuffer = std::vector<uint8_t>(_length * cvt.len_mult);
+                    std::copy_n(src, _length, cvtBuffer.data());
+                    cvt.len = (int32_t)_length;
+                    cvt.buf = cvtBuffer.data();
                     if (SDL_ConvertAudio(&cvt) >= 0)
                     {
+                        cvtBuffer.resize(cvt.len_cvt);
+
                         Unload();
-                        _data = cvt.buf;
+                        _data = std::move(cvtBuffer);
                         _length = cvt.len_cvt;
                         _format = *format;
                         return true;
-                    }
-                    else
-                    {
-                        delete[] cvt.buf;
                     }
                 }
             }
@@ -179,19 +182,14 @@ namespace OpenRCT2 { namespace Audio
     private:
         void Unload()
         {
-            if (_data != nullptr)
-            {
-                if (_isSDLWav)
-                {
-                    SDL_FreeWAV(_data);
-                }
-                else
-                {
-                    delete[] _data;
-                }
-                _data = nullptr;
-            }
-            _isSDLWav = false;
+            // Free our data
+            _data.clear();
+            _data.shrink_to_fit();
+
+            // Free SDL2's data
+            SDL_FreeWAV(_dataSDL);
+            _dataSDL = nullptr;
+
             _length = 0;
         }
     };
@@ -201,7 +199,7 @@ namespace OpenRCT2 { namespace Audio
         auto source = new MemoryAudioSource();
         if (source->LoadCSS1(path.c_str(), index))
         {
-            if (targetFormat != nullptr)
+            if (targetFormat != nullptr && source->GetFormat() != *targetFormat)
             {
                 if (!source->Convert(targetFormat))
                 {
@@ -223,7 +221,7 @@ namespace OpenRCT2 { namespace Audio
         auto source = new MemoryAudioSource();
         if (source->LoadWAV(path.c_str()))
         {
-            if (targetFormat != nullptr)
+            if (targetFormat != nullptr && source->GetFormat() != *targetFormat)
             {
                 if (!source->Convert(targetFormat))
                 {
@@ -238,4 +236,4 @@ namespace OpenRCT2 { namespace Audio
         }
         return source;
     }
-} }
+} // namespace OpenRCT2::Audio

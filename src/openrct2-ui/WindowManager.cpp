@@ -1,27 +1,24 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #include <openrct2/ui/WindowManager.h>
 #include <openrct2-ui/windows/Window.h>
 #include <openrct2/core/Console.hpp>
 #include <openrct2/config/Config.h>
+#include <openrct2/interface/Viewport.h>
 #include <openrct2/Input.h>
+#include <openrct2/world/Sprite.h>
 #include "input/Input.h"
 #include "input/KeyboardShortcuts.h"
+#include "interface/Theme.h"
 #include "WindowManager.h"
+#include "windows/Window.h"
 
 using namespace OpenRCT2::Ui;
 
@@ -30,6 +27,7 @@ class WindowManager final : public IWindowManager
 public:
     void Init() override
     {
+        theme_manager_initialise();
         window_guest_list_init_vars();
         window_new_ride_init_vars();
     }
@@ -134,7 +132,7 @@ public:
         }
     }
 
-    rct_window * OpenView(uint8 view) override
+    rct_window * OpenView(uint8_t view) override
     {
         switch (view)
         {
@@ -170,7 +168,7 @@ public:
         }
     }
 
-    rct_window * OpenDetails(uint8 type, sint32 id) override
+    rct_window * OpenDetails(uint8_t type, int32_t id) override
     {
         switch (type)
         {
@@ -178,6 +176,8 @@ public:
             return window_banner_open(id);
         case WD_DEMOLISH_RIDE:
             return window_ride_demolish_prompt_open(id);
+        case WD_REFURBISH_RIDE:
+            return window_ride_refurbish_prompt_open(id);
         case WD_NEW_CAMPAIGN:
             return window_new_campaign_open(id);
         case WD_SIGN:
@@ -212,7 +212,7 @@ public:
             return window_guest_list_open_with_filter(intent->GetSIntExtra(INTENT_EXTRA_GUEST_LIST_FILTER), intent->GetSIntExtra(INTENT_EXTRA_RIDE_ID));
         case WC_LOADSAVE:
         {
-            uint32 type = intent->GetUIntExtra(INTENT_EXTRA_LOADSAVE_TYPE);
+            uint32_t type = intent->GetUIntExtra(INTENT_EXTRA_LOADSAVE_TYPE);
             std::string defaultName = intent->GetStringExtra(INTENT_EXTRA_PATH);
             loadsave_callback callback = (loadsave_callback) intent->GetPointerExtra(INTENT_EXTRA_CALLBACK);
             rct_window *w = window_loadsave_open(type, defaultName.c_str());
@@ -234,6 +234,8 @@ public:
             const rct_object_entry * objects = (rct_object_entry *) intent->GetPointerExtra(INTENT_EXTRA_LIST);
             size_t count = intent->GetUIntExtra(INTENT_EXTRA_LIST_COUNT);
             window_object_load_error_open(const_cast<utf8 *>(path.c_str()), count, objects);
+
+            return nullptr;
         }
         case WC_RIDE:
             return window_ride_main_open(intent->GetSIntExtra(INTENT_EXTRA_RIDE_ID));
@@ -247,7 +249,7 @@ public:
             return window_track_list_open(rideItem);
         }
         case WC_SCENARIO_SELECT:
-            return window_scenarioselect_open((scenarioselect_callback) intent->GetPointerExtra(INTENT_EXTRA_CALLBACK));
+            return window_scenarioselect_open((scenarioselect_callback) intent->GetPointerExtra(INTENT_EXTRA_CALLBACK), false);
         case WD_VEHICLE:
             return window_ride_open_vehicle((rct_vehicle *) intent->GetPointerExtra(INTENT_EXTRA_VEHICLE));
         case WD_TRACK:
@@ -265,7 +267,6 @@ public:
 
             return w;
         }
-            break;
         default:
             Console::Error::WriteLine("Unhandled window class for intent (%d)", intent->GetWindowClass());
             return nullptr;
@@ -299,6 +300,24 @@ public:
             window_maze_construction_update_pressed_widgets();
             break;
 
+        case INTENT_ACTION_RIDE_CONSTRUCTION_FOCUS:
+        {
+            auto rideIndex = intent.GetUIntExtra(INTENT_EXTRA_RIDE_ID);
+            auto w = window_find_by_class(WC_RIDE_CONSTRUCTION);
+            if (w == nullptr || w->number != rideIndex)
+            {
+                window_close_construction_windows();
+                _currentRideIndex = rideIndex;
+                w = OpenWindow(WC_RIDE_CONSTRUCTION);
+            }
+            else
+            {
+                ride_construction_invalidate_current_track();
+                _currentRideIndex = rideIndex;
+            }
+            break;
+        }
+
         case INTENT_ACTION_RIDE_CONSTRUCTION_UPDATE_PIECES:
             window_ride_construction_update_enabled_track_pieces();
             break;
@@ -327,23 +346,91 @@ public:
             window_guest_list_refresh_list();
             break;
 
+        case INTENT_ACTION_REFRESH_STAFF_LIST:
+        {
+            auto w = window_find_by_class(WC_STAFF_LIST);
+            if (w != nullptr)
+            {
+                w->no_list_items = 0;
+            }
+            break;
+        }
+
         case INTENT_ACTION_CLEAR_TILE_INSPECTOR_CLIPBOARD:
             window_tile_inspector_clear_clipboard();
             break;
 
-        case INTENT_ACTION_SET_TILE_INSPECTOR_PAGE:
+        case INTENT_ACTION_INVALIDATE_VEHICLE_WINDOW:
         {
-            auto window = window_find_by_class(WC_TILE_INSPECTOR);
-            window_tile_inspector_set_page(window, static_cast<tile_inspector_page>(intent.GetUIntExtra(INTENT_EXTRA_PAGE)));
+            rct_vehicle * vehicle = static_cast<rct_vehicle *>(intent.GetPointerExtra(INTENT_EXTRA_VEHICLE));
+            int32_t viewVehicleIndex;
+            Ride * ride;
+            rct_window * w;
+
+            w = window_find_by_number(WC_RIDE, vehicle->ride);
+            if (w == nullptr)
+                return;
+
+            ride = get_ride(vehicle->ride);
+            viewVehicleIndex = w->ride.view - 1;
+            if (viewVehicleIndex < 0 || viewVehicleIndex >= ride->num_vehicles)
+                return;
+
+            if (vehicle->sprite_index != ride->vehicles[viewVehicleIndex])
+                return;
+
+            window_invalidate(w);
             break;
         }
 
-        case INTENT_ACTION_SET_TILE_INSPECTOR_BUTTONS:
+        case INTENT_ACTION_RIDE_PAINT_RESET_VEHICLE:
         {
-            auto window = window_find_by_class(WC_TILE_INSPECTOR);
-            window_tile_inspector_auto_set_buttons(window);
+            auto rideIndex = intent.GetUIntExtra(INTENT_EXTRA_RIDE_ID);
+            auto w = window_find_by_number(WC_RIDE, rideIndex);
+            if (w != nullptr)
+            {
+                if (w->page == 4) // WINDOW_RIDE_PAGE_COLOUR
+                { 
+                    w->vehicleIndex = 0;
+                }
+                window_invalidate(w);
+            }
+        }
+
+        case INTENT_ACTION_UPDATE_CLIMATE:
+            gToolbarDirtyFlags |= BTM_TB_DIRTY_FLAG_CLIMATE;
+            window_invalidate_by_class(WC_GUEST_LIST);
+            break;
+
+        case INTENT_ACTION_UPDATE_PARK_RATING:
+            gToolbarDirtyFlags |= BTM_TB_DIRTY_FLAG_PARK_RATING;
+            window_invalidate_by_class(WC_PARK_INFORMATION);
+            break;
+
+        case INTENT_ACTION_UPDATE_DATE:
+            gToolbarDirtyFlags |= BTM_TB_DIRTY_FLAG_DATE;
+            break;
+
+        case INTENT_ACTION_UPDATE_CASH:
+            window_invalidate_by_class(WC_FINANCES);
+            gToolbarDirtyFlags |= BTM_TB_DIRTY_FLAG_MONEY;
+            break;
+
+        case INTENT_ACTION_UPDATE_BANNER:
+        {
+            uint8_t bannerIndex = static_cast<uint8_t>(intent.GetUIntExtra(INTENT_EXTRA_BANNER_INDEX));
+
+            rct_window * w = window_find_by_number(WC_BANNER, bannerIndex);
+            if (w != nullptr)
+            {
+                window_invalidate(w);
+            }
             break;
         }
+        case INTENT_ACTION_UPDATE_RESEARCH:
+            window_invalidate_by_class(WC_FINANCES);
+            window_invalidate_by_class(WC_RESEARCH);
+            break;
         }
     }
 
@@ -375,11 +462,57 @@ public:
         input_handle_keyboard(isTitle);
     }
 
-    std::string GetKeyboardShortcutString(sint32 shortcut) override
+    std::string GetKeyboardShortcutString(int32_t shortcut) override
     {
         utf8 buffer[256];
         keyboard_shortcuts_format_string(buffer, sizeof(buffer), shortcut);
         return std::string(buffer);
+    }
+
+    void SetMainView(int32_t x, int32_t y, int32_t zoom, int32_t rotation) override
+    {
+        auto mainWindow = window_get_main();
+        if (mainWindow != nullptr)
+        {
+            auto viewport = window_get_viewport(mainWindow);
+            auto zoomDifference = zoom - viewport->zoom;
+
+            mainWindow->viewport_target_sprite = SPRITE_INDEX_NULL;
+            mainWindow->saved_view_x = x;
+            mainWindow->saved_view_y = y;
+            viewport->zoom = zoom;
+            gCurrentRotation = rotation;
+
+            if (zoomDifference != 0)
+            {
+                viewport->view_width <<= zoomDifference;
+                viewport->view_height <<= zoomDifference;
+            }
+            mainWindow->saved_view_x -= viewport->view_width >> 1;
+            mainWindow->saved_view_y -= viewport->view_height >> 1;
+
+            // Make sure the viewport has correct coordinates set.
+            viewport_update_position(mainWindow);
+
+            window_invalidate(mainWindow);
+        }
+    }
+
+    void UpdateMouseWheel() override
+    {
+        window_all_wheel_input();
+    }
+
+    rct_window* GetOwner(const rct_viewport* viewport) override
+    {
+        for (auto& w : g_window_list)
+        {
+            if (w->viewport == viewport)
+            {
+                return w.get();
+            }
+        }
+        return nullptr;
     }
 };
 

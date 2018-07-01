@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #include <cmath>
 
@@ -34,7 +27,7 @@ CursorRepository::~CursorRepository()
 
 void CursorRepository::LoadCursors()
 {
-    SetCursorScale(static_cast<uint8>(round(gConfigGeneral.window_scale)));
+    SetCursorScale(static_cast<uint8_t>(round(gConfigGeneral.window_scale)));
     SetCurrentCursor(CURSOR_ARROW);
 }
 
@@ -53,19 +46,19 @@ void CursorRepository::SetCurrentCursor(CURSOR_ID cursorId)
     }
 }
 
-static bool getBit(const uint8 * data, size_t x, size_t y, size_t width)
+static bool getBit(const uint8_t * data, size_t x, size_t y, size_t width)
 {
     size_t position = y * width + x;
     return (data[position / 8] & (1 << (7 - (x % 8)))) != 0;
 }
 
-static void setBit(uint8 * data, size_t x, size_t y, size_t width)
+static void setBit(uint8_t * data, size_t x, size_t y, size_t width)
 {
     size_t position = y * width + x;
     data[position / 8] |= (1 << (7 - (position % 8)));
 }
 
-static void drawRect(uint8 * data, size_t x, size_t y, size_t width, size_t scale)
+static void drawRect(uint8_t * data, size_t x, size_t y, size_t width, size_t scale)
 {
     for (size_t outY = (y * scale); outY < ((1 + y) * scale); outY++)
     {
@@ -76,10 +69,10 @@ static void drawRect(uint8 * data, size_t x, size_t y, size_t width, size_t scal
     }
 }
 
-static uint8 * scaleDataArray(const uint8 data[], size_t width, size_t height, size_t scale)
+static uint8_t * scaleDataArray(const uint8_t data[], size_t width, size_t height, size_t scale)
 {
     size_t length = width * height;
-    auto * ret = static_cast<uint8 *>(calloc(sizeof(uint8), length * scale * scale));
+    auto * ret = static_cast<uint8_t *>(calloc(sizeof(uint8_t), length * scale * scale));
 
     for (size_t y = 0; y < height * 8; y++)
     {
@@ -95,7 +88,7 @@ static uint8 * scaleDataArray(const uint8 data[], size_t width, size_t height, s
     return ret;
 }
 
-SDL_Cursor * CursorRepository::Create(const CursorData * cursorInfo, uint8 scale)
+SDL_Cursor * CursorRepository::Create(const CursorData * cursorInfo, uint8_t scale)
 {
     SDL_Cursor * cursor;
 
@@ -119,7 +112,7 @@ SDL_Cursor * CursorRepository::Create(const CursorData * cursorInfo, uint8 scale
     return cursor;
 }
 
-void CursorRepository::SetCursorScale(uint8 cursorScale)
+void CursorRepository::SetCursorScale(uint8_t cursorScale)
 {
     if (cursorScale > 0.0)
     {
@@ -128,7 +121,7 @@ void CursorRepository::SetCursorScale(uint8 cursorScale)
     }
 }
 
-void CursorRepository::GenerateScaledCursorSetHolder(uint8 scale)
+void CursorRepository::GenerateScaledCursorSetHolder(uint8_t scale)
 {
     if (_scaledCursors.find(scale) == _scaledCursors.end())
     {

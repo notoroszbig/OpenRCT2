@@ -1,21 +1,16 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <algorithm>
 #include <cstdarg>
+#include <cstdio>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -28,17 +23,17 @@
 #include "TestTrack.hpp"
 #include "Utils.hpp"
 
-#include "data.h"
-#include <openrct2/rct2.h>
-#include <openrct2/ride/ride.h>
-#include <openrct2/ride/ride_data.h>
+#include "Data.h"
+#include <openrct2/rct2/RCT2.h>
+#include <openrct2/ride/Ride.h>
+#include <openrct2/ride/RideData.h>
 #include <openrct2/ride/Track.h>
 #include <openrct2/ride/TrackData.h>
 
-typedef struct {
-    uint8 rideType;
-    std::vector<uint8> trackTypes;
-} TestCase;
+struct TestCase {
+    uint8_t rideType;
+    std::vector<uint8_t> trackTypes;
+};
 
 enum CLIColour {
     DEFAULT,
@@ -101,7 +96,7 @@ static const char* GetAnsiColorCode(CLIColour color) {
         case GREEN:   return "2";
         case YELLOW:
             return "3";
-        default:            return NULL;
+        default:            return nullptr;
     };
 }
 
@@ -189,9 +184,9 @@ int main(int argc, char *argv[]);
 
 #define OPENRCT2_DLL_MODULE_NAME "openrct2.dll"
 
-static HMODULE _dllModule = NULL;
+static HMODULE _dllModule = nullptr;
 
-utf8 *utf8_write_codepoint(utf8 *dst, uint32 codepoint)
+utf8 *utf8_write_codepoint(utf8 *dst, uint32_t codepoint)
 {
     if (codepoint <= 0x7F) {
         dst[0] = (utf8)codepoint;
@@ -256,7 +251,7 @@ BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 __declspec(dllexport) int StartOpenRCT(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 
-    if (_dllModule == NULL) {
+    if (_dllModule == nullptr) {
         _dllModule = GetModuleHandleA(OPENRCT2_DLL_MODULE_NAME);
     }
 
@@ -279,10 +274,10 @@ __declspec(dllexport) int StartOpenRCT(HINSTANCE hInstance, HINSTANCE hPrevInsta
 
 char *segments = (char *)(GOOD_PLACE_FOR_DATA_SEGMENT);
 
-static uint32 sawyercoding_calculate_checksum(const uint8* buffer, size_t length)
+static uint32_t sawyercoding_calculate_checksum(const uint8_t* buffer, size_t length)
 {
     size_t i;
-    uint32 checksum = 0;
+    uint32_t checksum = 0;
     for (i = 0; i < length; i++)
         checksum += buffer[i];
 
@@ -297,11 +292,9 @@ static bool openrct2_setup_rct2_segment()
 {
     // OpenRCT2 on Linux and macOS is wired to have the original Windows PE sections loaded
     // necessary. Windows does not need to do this as OpenRCT2 runs as a DLL loaded from the Windows PE.
-    int len = 0x01429000 - 0x8a4000; // 0xB85000, 12079104 bytes or around 11.5MB
-    int err = 0;
     // in some configurations err and len may be unused
-    UNUSED(err);
-    UNUSED(len);
+    [[maybe_unused]] int len = 0x01429000 - 0x8a4000; // 0xB85000, 12079104 bytes or around 11.5MB
+    [[maybe_unused]] int err = 0;
 #if defined(__unix__)
     int pageSize = getpagesize();
     int numPages = (len + pageSize - 1) / pageSize;
@@ -359,10 +352,10 @@ static bool openrct2_setup_rct2_segment()
     // Check that the expected data is at various addresses.
     // Start at 0x9a6000, which is start of .data, to skip the region containing addresses to DLL
     // calls, which can be changed by windows/wine loader.
-    const uint32 c1 = sawyercoding_calculate_checksum((const uint8*)(segments + (uintptr_t)(0x009A6000 - 0x8a4000)), 0x009E0000 - 0x009A6000);
-    const uint32 c2 = sawyercoding_calculate_checksum((const uint8*)(segments + (uintptr_t)(0x01428000 - 0x8a4000)), 0x014282BC - 0x01428000);
-    const uint32 exp_c1 = 10114815;
-    const uint32 exp_c2 = 23564;
+    const uint32_t c1 = sawyercoding_calculate_checksum((const uint8_t*)(segments + (uintptr_t)(0x009A6000 - 0x8a4000)), 0x009E0000 - 0x009A6000);
+    const uint32_t c2 = sawyercoding_calculate_checksum((const uint8_t*)(segments + (uintptr_t)(0x01428000 - 0x8a4000)), 0x014282BC - 0x01428000);
+    const uint32_t exp_c1 = 10114815;
+    const uint32_t exp_c2 = 23564;
     if (c1 != exp_c1 || c2 != exp_c2) {
         log_warning("c1 = %u, expected %u, match %d", c1, exp_c1, c1 == exp_c1);
         log_warning("c2 = %u, expected %u, match %d", c2, exp_c2, c2 == exp_c2);
@@ -374,7 +367,7 @@ static bool openrct2_setup_rct2_segment()
 
 static void PrintRideTypes()
 {
-    for (uint8 rideType = 0; rideType < RIDE_TYPE_COUNT; rideType++) {
+    for (uint8_t rideType = 0; rideType < RIDE_TYPE_COUNT; rideType++) {
         CLIColour colour = CLIColour::DEFAULT;
         bool implemented = Utils::rideIsImplemented(rideType);
         const char * rideName = RideNames[rideType];
@@ -428,7 +421,7 @@ int main(int argc, char *argv[]) {
     std::vector<TestCase> testCases;
 
     bool generate = false;
-    uint8 specificRideType = 0xFF;
+    uint8_t specificRideType = 0xFF;
     for (int i = 0; i < argc; ++i) {
         char *arg = argv[i];
         if (strcmp(arg, "--gtest_color=no") == 0) {
@@ -463,7 +456,7 @@ int main(int argc, char *argv[]) {
         return generatePaintCode(specificRideType);
     }
 
-    for (uint8 rideType = 0; rideType < RIDE_TYPE_COUNT; rideType++) {
+    for (uint8_t rideType = 0; rideType < RIDE_TYPE_COUNT; rideType++) {
         if (specificRideType != RIDE_TYPE_NULL && rideType != specificRideType) {
             continue;
         }
@@ -472,7 +465,7 @@ int main(int argc, char *argv[]) {
             continue;
         }
 
-        TestCase testCase = {0};
+        TestCase testCase = {};
         testCase.rideType = rideType;
 
         if (ride_type_has_flag(rideType, RIDE_TYPE_FLAG_FLAT_RIDE)) {

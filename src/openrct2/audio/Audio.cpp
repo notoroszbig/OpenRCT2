@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include "../config/Config.h"
 #include "../Context.h"
@@ -20,18 +13,17 @@
 #include "../core/FileStream.hpp"
 #include "../core/Memory.hpp"
 #include "../core/String.hpp"
-#include "../core/Util.hpp"
-#include "../localisation/string_ids.h"
+#include "../localisation/StringIds.h"
 #include "../OpenRCT2.h"
 #include "../ui/UiContext.h"
 #include "audio.h"
 #include "AudioContext.h"
 #include "AudioMixer.h"
 
-#include "../interface/viewport.h"
+#include "../interface/Viewport.h"
 #include "../Intro.h"
-#include "../localisation/language.h"
-#include "../ride/ride.h"
+#include "../localisation/Language.h"
+#include "../ride/Ride.h"
 #include "../util/Util.h"
 
 using namespace OpenRCT2::Audio;
@@ -39,16 +31,16 @@ using namespace OpenRCT2::Audio;
 struct AudioParams
 {
     bool in_range;
-    sint32 volume;
-    sint32 pan;
+    int32_t volume;
+    int32_t pan;
 };
 
 audio_device *  gAudioDevices = nullptr;
-sint32          gAudioDeviceCount;
-sint32          gAudioCurrentDevice = -1;
+int32_t          gAudioDeviceCount;
+int32_t          gAudioCurrentDevice = -1;
 
 bool    gGameSoundsOff = false;
-sint32  gVolumeAdjustZoom = 0;
+int32_t  gVolumeAdjustZoom = 0;
 
 void *  gTitleMusicChannel = nullptr;
 void *  gRainSoundChannel = nullptr;
@@ -61,7 +53,8 @@ rct_vehicle_sound           gVehicleSoundList[AUDIO_MAX_VEHICLE_SOUNDS];
 rct_vehicle_sound_params    gVehicleSoundParamsList[AUDIO_MAX_VEHICLE_SOUNDS];
 rct_vehicle_sound_params *  gVehicleSoundParamsListEnd;
 
-static sint32 SoundVolumeAdjust[SOUND_MAXID] =
+// clang-format off
+static int32_t SoundVolumeAdjust[SOUND_MAXID] =
 {
     0,      // SOUND_LIFT_1
     0,      // SOUND_TRACK_FRICTION_1
@@ -127,8 +120,9 @@ static sint32 SoundVolumeAdjust[SOUND_MAXID] =
     -2700,  // SOUND_DOOR_CLOSE
     -700    // SOUND_62
 };
+// clang-format on
 
-AudioParams audio_get_params_from_location(sint32 soundId, const LocationXYZ16 *location);
+AudioParams audio_get_params_from_location(int32_t soundId, const LocationXYZ16 *location);
 
 void audio_init()
 {
@@ -142,7 +136,7 @@ void audio_init()
         Mixer_Init(gConfigSound.device);
 
         audio_populate_devices();
-        for (sint32 i = 0; i < gAudioDeviceCount; i++)
+        for (int32_t i = 0; i < gAudioDeviceCount; i++)
         {
             if (String::Equals(gAudioDevices[i].name, gConfigSound.device))
             {
@@ -156,7 +150,7 @@ void audio_populate_devices()
 {
     SafeFree(gAudioDevices);
 
-    IAudioContext * audioContext = OpenRCT2::GetContext()->GetAudioContext();
+    auto audioContext = OpenRCT2::GetContext()->GetAudioContext();
     std::vector<std::string> devices = audioContext->GetOutputDevices();
 
     // Replace blanks with localised unknown string
@@ -174,16 +168,16 @@ void audio_populate_devices()
     devices.insert(devices.begin(), defaultDevice);
 #endif
 
-    gAudioDeviceCount = (sint32)devices.size();
+    gAudioDeviceCount = (int32_t)devices.size();
     gAudioDevices = Memory::AllocateArray<audio_device>(gAudioDeviceCount);
-    for (sint32 i = 0; i < gAudioDeviceCount; i++)
+    for (int32_t i = 0; i < gAudioDeviceCount; i++)
     {
         auto device = &gAudioDevices[i];
         String::Set(device->name, sizeof(device->name), devices[i].c_str());
     }
 }
 
-sint32 audio_play_sound_at_location(sint32 soundId, sint16 x, sint16 y, sint16 z)
+int32_t audio_play_sound_at_location(int32_t soundId, int16_t x, int16_t y, int16_t z)
 {
     if (gGameSoundsOff)
         return 0;
@@ -207,38 +201,32 @@ sint32 audio_play_sound_at_location(sint32 soundId, sint16 x, sint16 y, sint16 z
 * @param location The location at which the sound effect is to be played.
 * @return The audio parameters to be used when playing this sound effect.
 */
-AudioParams audio_get_params_from_location(sint32 soundId, const LocationXYZ16 *location)
+AudioParams audio_get_params_from_location(int32_t soundId, const LocationXYZ16 *location)
 {
-    sint32 volumeDown = 0;
+    int32_t volumeDown = 0;
     AudioParams params;
     params.in_range = true;
     params.volume = 0;
     params.pan = 0;
 
-    rct_tile_element * element = map_get_surface_element_at(location->x >> 5, location->y >> 5);
+    rct_tile_element * element = map_get_surface_element_at({location->x, location->y});
     if (element && (element->base_height * 8) - 5 > location->z)
     {
         volumeDown = 10;
     }
 
-    uint8 rotation = get_current_rotation();
+    uint8_t rotation = get_current_rotation();
     LocationXY16 pos2 = coordinate_3d_to_2d(location, rotation);
-    rct_window * window = gWindowNextSlot;
-    while (true)
-    {
-        window--;
-        if (window < g_window_list)
-        {
-            break;
-        }
 
-        rct_viewport * viewport = window->viewport;
-        if (viewport != nullptr && (viewport->flags & VIEWPORT_FLAG_SOUND_ON))
+    rct_viewport * viewport = nullptr;
+    while ((viewport = window_get_previous_viewport(viewport)) != nullptr)
+    {
+        if (viewport->flags & VIEWPORT_FLAG_SOUND_ON)
         {
-            sint16 vy = pos2.y - viewport->view_y;
-            sint16 vx = pos2.x - viewport->view_x;
+            int16_t vy = pos2.y - viewport->view_y;
+            int16_t vx = pos2.x - viewport->view_x;
             params.pan = viewport->x + (vx >> viewport->zoom);
-            params.volume = SoundVolumeAdjust[soundId] + ((-1024 * viewport->zoom - 1) << volumeDown) + 1;
+            params.volume = SoundVolumeAdjust[soundId] + ((-1024 * viewport->zoom - 1) * (1 << volumeDown)) + 1;
 
             if (vy < 0 || vy >= viewport->view_height || vx < 0 || vx >= viewport->view_width || params.volume < -10000)
             {
@@ -251,16 +239,16 @@ AudioParams audio_get_params_from_location(sint32 soundId, const LocationXYZ16 *
     return params;
 }
 
-sint32 audio_play_sound(sint32 soundId, sint32 volume, sint32 pan)
+int32_t audio_play_sound(int32_t soundId, int32_t volume, int32_t pan)
 {
     if (gGameSoundsOff)
         return 0;
 
-    sint32 mixerPan = 0;
+    int32_t mixerPan = 0;
     if (pan != AUDIO_PLAY_AT_CENTRE)
     {
-        sint32 x2 = pan << 16;
-        uint16 screenWidth = Math::Max<sint32>(64, OpenRCT2::GetContext()->GetUiContext()->GetWidth());
+        int32_t x2 = pan << 16;
+        uint16_t screenWidth = std::max<int32_t>(64, OpenRCT2::GetContext()->GetUiContext()->GetWidth());
         mixerPan = ((x2 / screenWidth) - 0x8000) >> 4;
     }
 
@@ -281,7 +269,7 @@ void audio_start_title_music()
         return;
     }
 
-    sint32 pathId;
+    int32_t pathId;
     switch (gConfigSound.title_music) {
     case 1:
         pathId = PATH_ID_CSS50;
@@ -348,36 +336,36 @@ void audio_stop_rain_sound()
 
 void audio_init_ride_sounds_and_info()
 {
-    sint32 deviceNum = 0;
+    int32_t deviceNum = 0;
     audio_init_ride_sounds(deviceNum);
 
-    for (auto * rideMusicInfo : gRideMusicInfoList)
+    for (auto &rideMusicInfo : gRideMusicInfoList)
     {
-        const utf8 * path = context_get_path_legacy(rideMusicInfo->path_id);
+        const utf8 * path = context_get_path_legacy(rideMusicInfo.path_id);
         if (File::Exists(path))
         {
             try
             {
                 auto fs = FileStream(path, FILE_MODE_OPEN);
-                uint32 head = fs.ReadValue<uint32>();
+                uint32_t head = fs.ReadValue<uint32_t>();
                 if (head == 0x78787878)
                 {
-                    rideMusicInfo->length = 0;
+                    rideMusicInfo.length = 0;
                 }
                 // The length used to be hardcoded, but we stopped doing that to allow replacement.
-                if (rideMusicInfo->length == 0)
+                if (rideMusicInfo.length == 0)
                 {
-                    rideMusicInfo->length = fs.GetLength();
+                    rideMusicInfo.length = fs.GetLength();
                 }
             }
-            catch (const Exception &)
+            catch (const std::exception &)
             {
             }
         }
     }
 }
 
-void audio_init_ride_sounds(sint32 device)
+void audio_init_ride_sounds(int32_t device)
 {
     audio_close();
     for (auto &vehicleSound : gVehicleSoundList)

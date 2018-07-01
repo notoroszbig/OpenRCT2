@@ -1,29 +1,22 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <cassert>
-#include <stdarg.h>
-#include <stdio.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
 
 #include "../common.h"
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#undef GetMessage
 #endif
 
 #include "../Version.h"
@@ -32,15 +25,12 @@
 #include "Guard.hpp"
 #include "String.hpp"
 
-extern "C"
+void openrct2_assert_fwd(bool expression, const char * message, ...)
 {
-    void openrct2_assert_fwd(bool expression, const char * message, ...)
-    {
-        va_list va;
-        va_start(va, message);
-        Guard::Assert_VA(expression, message, va);
-        va_end(va);
-    }
+    va_list va;
+    va_start(va, message);
+    Guard::Assert_VA(expression, message, va);
+    va_end(va);
 }
 
 namespace Guard
@@ -101,7 +91,6 @@ namespace Guard
         switch (_assertBehaviour) {
         case ASSERT_BEHAVIOUR::ABORT:
             abort();
-            break;
         default:
         case ASSERT_BEHAVIOUR::CASSERT:
             assert(false);
@@ -112,7 +101,7 @@ namespace Guard
             // Show message box if we are not building for testing
             char buffer[512];
             GetAssertMessage(buffer, sizeof(buffer), formattedMessage);
-            sint32 result = MessageBoxA(nullptr, buffer, OPENRCT2_NAME, MB_ABORTRETRYIGNORE | MB_ICONEXCLAMATION);
+            int32_t result = MessageBoxA(nullptr, buffer, OPENRCT2_NAME, MB_ABORTRETRYIGNORE | MB_ICONEXCLAMATION);
             if (result == IDABORT)
             {
                 ForceCrash();
@@ -160,4 +149,4 @@ namespace Guard
 #endif
     }
 #endif
-}
+} // namespace Guard

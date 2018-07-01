@@ -1,40 +1,37 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
+
+#include <cstddef>
 
 #include <openrct2/config/Config.h>
 #include <openrct2/core/Util.hpp>
 #include <openrct2-ui/windows/Window.h>
 
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2/sprites.h>
+#include <openrct2/drawing/Drawing.h>
 
+// clang-format off
 enum {
     NOTIFICATION_CATEGORY_PARK,
     NOTIFICATION_CATEGORY_RIDE,
     NOTIFICATION_CATEGORY_GUEST
 };
 
-typedef struct notification_def {
-    uint8 category;
+struct notification_def {
+    uint8_t category;
     rct_string_id caption;
     size_t config_offset;
-} notification_def;
+};
 
-static const notification_def NewsItemOptionDefinitions[] = {
+static constexpr const notification_def NewsItemOptionDefinitions[] = {
     { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_AWARD,                        offsetof(NotificationConfiguration, park_award)                         },
     { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_MARKETING_CAMPAIGN_FINISHED,  offsetof(NotificationConfiguration, park_marketing_campaign_finished)   },
     { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_WARNINGS,                     offsetof(NotificationConfiguration, park_warnings)                      },
@@ -122,8 +119,9 @@ static rct_window_event_list window_news_options_events = {
     window_news_options_paint,
     nullptr
 };
+// clang-format on
 
-static void window_news_options_set_page(rct_window *w, sint32 page);
+static void window_news_options_set_page(rct_window *w, int32_t page);
 static void window_news_options_draw_tab_images(rct_window *w, rct_drawpixelinfo *dpi);
 static bool *get_notification_value_ptr(const notification_def *ndef);
 
@@ -169,9 +167,9 @@ static void window_news_options_mouseup(rct_window *w, rct_widgetindex widgetInd
         break;
     default:
     {
-        sint32 checkBoxIndex = widgetIndex - WIDX_CHECKBOX_0;
+        int32_t checkBoxIndex = widgetIndex - WIDX_CHECKBOX_0;
         if (checkBoxIndex >= 0) {
-            sint32 matchIndex = 0;
+            int32_t matchIndex = 0;
             for (size_t i = 0; i < Util::CountOf(NewsItemOptionDefinitions); i++) {
                 const notification_def *ndef = &NewsItemOptionDefinitions[i];
                 if (ndef->category != w->page) continue;
@@ -210,9 +208,9 @@ static void window_news_options_invalidate(rct_window *w)
 
     // Set checkboxes
     rct_widget *baseCheckBox = &w->widgets[WIDX_CHECKBOX_0];
-    sint32 y = baseCheckBox->top;
+    int32_t y = baseCheckBox->top;
 
-    sint32 checkboxWidgetIndex = WIDX_CHECKBOX_0;
+    int32_t checkboxWidgetIndex = WIDX_CHECKBOX_0;
     rct_widget *checkboxWidget = &w->widgets[checkboxWidgetIndex];
     for (size_t i = 0; i < Util::CountOf(NewsItemOptionDefinitions); i++) {
         const notification_def *ndef = &NewsItemOptionDefinitions[i];
@@ -262,7 +260,7 @@ static void window_news_options_paint(rct_window *w, rct_drawpixelinfo *dpi)
     window_news_options_draw_tab_images(w, dpi);
 }
 
-static void window_news_options_set_page(rct_window *w, sint32 page)
+static void window_news_options_set_page(rct_window *w, int32_t page)
 {
     if (w->page != page) {
         w->page = page;
@@ -271,18 +269,18 @@ static void window_news_options_set_page(rct_window *w, sint32 page)
     }
 }
 
-const sint32 window_news_option_tab_animation_divisor[] = { 1, 4, 4 };
-const sint32 window_news_option_tab_animation_frames[] = { 1, 16, 8 };
+const int32_t window_news_option_tab_animation_divisor[] = { 1, 4, 4 };
+const int32_t window_news_option_tab_animation_frames[] = { 1, 16, 8 };
 
-static void window_news_options_draw_tab_image(rct_window *w, rct_drawpixelinfo *dpi, sint32 page, sint32 spriteIndex)
+static void window_news_options_draw_tab_image(rct_window *w, rct_drawpixelinfo *dpi, int32_t page, int32_t spriteIndex)
 {
     rct_widgetindex widgetIndex = WIDX_TAB_PARK + page;
 
     if (!(w->disabled_widgets & (1LL << widgetIndex))) {
         if (w->page == page) {
-            sint32 numFrames = window_news_option_tab_animation_frames[w->page];
+            int32_t numFrames = window_news_option_tab_animation_frames[w->page];
             if (numFrames > 1) {
-                sint32 frame = w->frame_no / window_news_option_tab_animation_divisor[w->page];
+                int32_t frame = w->frame_no / window_news_option_tab_animation_divisor[w->page];
                 spriteIndex += (frame % numFrames);
             }
         }

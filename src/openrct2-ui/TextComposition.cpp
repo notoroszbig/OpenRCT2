@@ -1,29 +1,24 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #include <openrct2/common.h>
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include <openrct2/core/Math.hpp>
 #include <openrct2/core/Memory.hpp>
 #include <openrct2/core/String.hpp>
 #include "TextComposition.h"
 
-#include <openrct2/interface/console.h>
-#include <openrct2/interface/window.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2/interface/InteractiveConsole.h>
+#include <openrct2-ui/interface/Window.h>
+#include <openrct2/localisation/Localisation.h>
+#include "interface/InGameConsole.h"
+#include "UiContext.h"
 
 #ifdef __MACOSX__
     // macOS uses COMMAND rather than CTRL for many keyboard shortcuts
@@ -69,6 +64,8 @@ void TextComposition::Stop()
 
 void TextComposition::HandleMessage(const SDL_Event * e)
 {
+    auto& console = GetInGameConsole();
+
     switch (e->type) {
     case SDL_TEXTEDITING:
         // When inputting Korean characters, `edit.length` is always zero
@@ -84,7 +81,7 @@ void TextComposition::HandleMessage(const SDL_Event * e)
         if (_session.Buffer != nullptr)
         {
             // HACK ` will close console, so don't input any text
-            if (e->text.text[0] == '`' && gConsoleOpen) {
+            if (e->text.text[0] == '`' && console.IsOpen()) {
                 break;
             }
 
@@ -93,7 +90,7 @@ void TextComposition::HandleMessage(const SDL_Event * e)
             Insert(newText);
             Memory::Free(newText);
 
-            console_refresh_caret();
+            console.RefreshCaret();
             window_update_textbox();
         }
         break;
@@ -104,7 +101,7 @@ void TextComposition::HandleMessage(const SDL_Event * e)
             break;
         }
 
-        uint16 modifier = e->key.keysym.mod;
+        uint16_t modifier = e->key.keysym.mod;
         SDL_Keycode key = e->key.keysym.sym;
         if (key == SDLK_KP_ENTER)
         {
@@ -124,13 +121,13 @@ void TextComposition::HandleMessage(const SDL_Event * e)
         if (key == SDLK_BACKSPACE && (modifier & KEYBOARD_PRIMARY_MODIFIER))
         {
             Clear();
-            console_refresh_caret();
+            console.RefreshCaret();
             window_update_textbox();
         }
 
         switch (key) {
         case SDLK_BACKSPACE:
-            // If backspace and we have input text with a cursor position none zero
+            // If backspace and we have input text with a cursor position nonzero
             if (_session.SelectionStart > 0)
             {
                 size_t endOffset = _session.SelectionStart;
@@ -138,17 +135,17 @@ void TextComposition::HandleMessage(const SDL_Event * e)
                 _session.SelectionSize = endOffset - _session.SelectionStart;
                 Delete();
 
-                console_refresh_caret();
+                console.RefreshCaret();
                 window_update_textbox();
             }
             break;
         case SDLK_HOME:
             CursorHome();
-            console_refresh_caret();
+            console.RefreshCaret();
             break;
         case SDLK_END:
             CursorEnd();
-            console_refresh_caret();
+            console.RefreshCaret();
             break;
         case SDLK_DELETE:
         {
@@ -157,7 +154,7 @@ void TextComposition::HandleMessage(const SDL_Event * e)
             _session.SelectionSize = _session.SelectionStart - startOffset;
             _session.SelectionStart = startOffset;
             Delete();
-            console_refresh_caret();
+            console.RefreshCaret();
             window_update_textbox();
             break;
         }
@@ -166,11 +163,11 @@ void TextComposition::HandleMessage(const SDL_Event * e)
             break;
         case SDLK_LEFT:
             CursorLeft();
-            console_refresh_caret();
+            console.RefreshCaret();
             break;
         case SDLK_RIGHT:
             CursorRight();
-            console_refresh_caret();
+            console.RefreshCaret();
             break;
         case SDLK_v:
             if ((modifier & KEYBOARD_PRIMARY_MODIFIER) && SDL_HasClipboardText())
@@ -194,7 +191,15 @@ void TextComposition::CursorHome()
 
 void TextComposition::CursorEnd()
 {
-    _session.SelectionStart = _session.SelectionSize;
+    size_t selectionOffset = _session.Size;
+    const utf8 * ch = _session.Buffer + _session.SelectionStart;
+    while (!utf8_is_codepoint_start(ch) && selectionOffset > 0)
+    {
+        ch--;
+        selectionOffset--;
+    }
+
+    _session.SelectionStart = selectionOffset;
 }
 
 void TextComposition::CursorLeft()
@@ -228,7 +233,7 @@ void TextComposition::CursorRight()
         }
         while (!utf8_is_codepoint_start(ch) && selectionOffset < selectionMaxOffset);
 
-        _session.SelectionSize = Math::Max<size_t>(0, _session.SelectionSize - (selectionOffset - _session.SelectionStart));
+        _session.SelectionSize = std::max<size_t>(0, _session.SelectionSize - (selectionOffset - _session.SelectionStart));
         _session.SelectionStart = selectionOffset;
     }
 }
@@ -236,7 +241,7 @@ void TextComposition::CursorRight()
 void TextComposition::Insert(const utf8 * text)
 {
     const utf8 * ch = text;
-    uint32 codepoint;
+    uint32_t codepoint;
     while ((codepoint = utf8_get_next(ch, &ch)) != 0)
     {
         InsertCodepoint(codepoint);
@@ -283,12 +288,25 @@ void TextComposition::Clear()
 
 void TextComposition::Delete()
 {
+    size_t selectionOffset = _session.SelectionStart;
+    size_t selectionMaxOffset = _session.Size;
+
+    // Find out how many bytes to delete.
+    const utf8 * ch = _session.Buffer + _session.SelectionStart;
+    do
+    {
+        ch++;
+        selectionOffset++;
+    }
+    while (!utf8_is_codepoint_start(ch) && selectionOffset < selectionMaxOffset);
+
     utf8 * buffer = _session.Buffer;
     utf8 * targetShiftPtr = buffer + _session.SelectionStart;
     utf8 * sourceShiftPtr = targetShiftPtr + _session.SelectionSize;
+    size_t bytesToSkip = selectionOffset - _session.SelectionStart;
 
     // std::min() is used to ensure that shiftSize doesn't underflow; it should be between 0 and _session.Size
-    size_t shiftSize = _session.Size - std::min(_session.Size, (_session.SelectionStart - _session.SelectionSize + 1));
+    size_t shiftSize = _session.Size - std::min(_session.Size, (_session.SelectionStart - _session.SelectionSize + bytesToSkip));
     memmove(targetShiftPtr, sourceShiftPtr, shiftSize);
     _session.SelectionSize = 0;
     RecalculateLength();

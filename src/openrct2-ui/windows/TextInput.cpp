@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 /**
  * Text Input Window
@@ -26,13 +19,17 @@
 #include <openrct2/config/Config.h>
 #include <openrct2/Context.h>
 #include <openrct2/core/Math.hpp>
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2/core/String.hpp>
+#include <openrct2/core/Util.hpp>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2/util/Util.h>
+#include <openrct2/drawing/Drawing.h>
 
 #define WW 250
 #define WH 90
 
+// clang-format off
 enum WINDOW_TEXT_INPUT_WIDGET_IDX {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -46,8 +43,8 @@ static rct_widget window_text_input_widgets[] = {
         { WWT_FRAME, 1, 0, WW - 1, 0, WH - 1, STR_NONE, STR_NONE },
         { WWT_CAPTION, 1, 1, WW - 2, 1, 14, STR_OPTIONS, STR_WINDOW_TITLE_TIP },
         { WWT_CLOSEBOX, 1, WW - 13, WW - 3, 2, 13, STR_CLOSE_X, STR_CLOSE_WINDOW_TIP },
-        { WWT_DROPDOWN_BUTTON, 1, WW - 80, WW - 10, WH - 21, WH - 10, STR_CANCEL, STR_NONE },
-        { WWT_DROPDOWN_BUTTON, 1, 10, 80, WH - 21, WH - 10, STR_OK, STR_NONE },
+        { WWT_BUTTON,          1, WW - 80, WW - 10, WH - 21, WH - 10, STR_CANCEL, STR_NONE },
+        { WWT_BUTTON,          1, 10, 80, WH - 21, WH - 10, STR_OK, STR_NONE },
         { WIDGETS_END }
 };
 
@@ -89,29 +86,37 @@ static rct_window_event_list window_text_input_events = {
     window_text_input_paint,
     nullptr
 };
+// clang-format on
 
 static rct_string_id input_text_description;
-static char text_input[TEXT_INPUT_SIZE] = { 0 };
+static utf8 text_input[TEXT_INPUT_SIZE] = { 0 };
 static rct_windowclass calling_class = 0;
 static rct_windownumber calling_number = 0;
-static sint32 calling_widget = 0;
-static sint32 _maxInputLength;
+static int32_t calling_widget = 0;
+static int32_t _maxInputLength;
 
-void window_text_input_open(rct_window* call_w, rct_widgetindex call_widget, rct_string_id title, rct_string_id description, rct_string_id existing_text, uintptr_t existing_args, sint32 maxLength)
+void window_text_input_open(rct_window* call_w, rct_widgetindex call_widget, rct_string_id title, rct_string_id description, rct_string_id existing_text, uintptr_t existing_args, int32_t maxLength)
+{
+    // Get the raw string
+    utf8 buffer[Util::CountOf(text_input)]{};
+    if (existing_text != STR_NONE)
+        format_string(buffer, maxLength, existing_text, &existing_args);
+
+    utf8_remove_format_codes(buffer, false);
+    window_text_input_raw_open(call_w, call_widget, title, description, buffer, maxLength);
+}
+
+void window_text_input_raw_open(rct_window* call_w, rct_widgetindex call_widget, rct_string_id title, rct_string_id description, const_utf8string existing_text, int32_t maxLength)
 {
     _maxInputLength = maxLength;
 
     window_close_by_class(WC_TEXTINPUT);
 
-    // Clear the text input buffer
-    memset(text_input, 0, maxLength);
-
-    // Enter in the text input buffer any existing
-    // text.
-    if (existing_text != STR_NONE)
-        format_string(text_input, maxLength, existing_text, &existing_args);
-
-    utf8_remove_format_codes(text_input, false);
+    // Set the input text
+    if (existing_text != nullptr)
+        String::Set(text_input, sizeof(text_input), existing_text);
+    else
+        String::Set(text_input, sizeof(text_input), "");
 
     // This is the text displayed above the input box
     input_text_description = description;
@@ -120,13 +125,12 @@ void window_text_input_open(rct_window* call_w, rct_widgetindex call_widget, rct
     char wrapped_string[TEXT_INPUT_SIZE];
     safe_strcpy(wrapped_string, text_input, TEXT_INPUT_SIZE);
 
-    sint32 no_lines = 0, font_height = 0;
+    int32_t no_lines = 0, font_height = 0;
 
-    // String length needs to add 12 either side of box
-    // +13 for cursor when max length.
+    // String length needs to add 12 either side of box +13 for cursor when max length.
     gfx_wrap_string(wrapped_string, WW - (24 + 13), &no_lines, &font_height);
 
-    sint32 height = no_lines * 10 + WH;
+    int32_t height = no_lines * 10 + WH;
 
     // Window will be in the centre of the screen
     rct_window* w = window_create_centred(
@@ -138,73 +142,11 @@ void window_text_input_open(rct_window* call_w, rct_widgetindex call_widget, rct
     );
 
     w->widgets = window_text_input_widgets;
-    w->enabled_widgets = (1 << WIDX_CLOSE) | (1<<WIDX_CANCEL) | (1<<WIDX_OKAY);
+    w->enabled_widgets = (1ULL << WIDX_CLOSE) | (1ULL << WIDX_CANCEL) | (1ULL << WIDX_OKAY);
 
     window_text_input_widgets[WIDX_TITLE].text = title;
 
-    // Save calling window details so that the information
-    // can be passed back to the correct window & widget
-    calling_class = call_w->classification;
-    calling_number = call_w->number;
-    calling_widget = call_widget;
-
-    gTextInput = context_start_text_input(text_input, maxLength);
-
-    window_init_scroll_widgets(w);
-    w->colours[0] = call_w->colours[0];
-    w->colours[1] = call_w->colours[1];
-    w->colours[2] = call_w->colours[2];
-}
-
-void window_text_input_raw_open(rct_window* call_w, rct_widgetindex call_widget, rct_string_id title, rct_string_id description, utf8string existing_text, sint32 maxLength)
-{
-    _maxInputLength = maxLength;
-
-    window_close_by_class(WC_TEXTINPUT);
-
-    // Clear the text input buffer
-    memset(text_input, 0, maxLength);
-
-    // Enter in the text input buffer any existing
-    // text.
-    if (existing_text != nullptr)
-        safe_strcpy(text_input, existing_text, maxLength);
-
-    // In order to prevent strings that exceed the maxLength
-    // from crashing the game.
-    text_input[maxLength - 1] = '\0';
-
-    // This is the text displayed above the input box
-    input_text_description = description;
-
-    // Work out the existing size of the window
-    char wrapped_string[TEXT_INPUT_SIZE];
-    safe_strcpy(wrapped_string, text_input, TEXT_INPUT_SIZE);
-
-    sint32 no_lines = 0, font_height = 0;
-
-    // String length needs to add 12 either side of box
-    // +13 for cursor when max length.
-    gfx_wrap_string(wrapped_string, WW - (24 + 13), &no_lines, &font_height);
-
-    sint32 height = no_lines * 10 + WH;
-
-    // Window will be in the centre of the screen
-    rct_window* w = window_create_centred(
-        WW,
-        height,
-        &window_text_input_events,
-        WC_TEXTINPUT,
-        WF_STICK_TO_FRONT
-        );
-
-    w->widgets = window_text_input_widgets;
-    w->enabled_widgets = (1 << WIDX_CLOSE) | (1 << WIDX_CANCEL) | (1 << WIDX_OKAY);
-
-    window_text_input_widgets[WIDX_TITLE].text = title;
-
-    // Save calling window details so that the information
-    // can be passed back to the correct window & widget
+    // Save calling window details so that the information can be passed back to the correct window & widget
     calling_class = call_w->classification;
     calling_number = call_w->number;
     calling_widget = call_widget;
@@ -238,7 +180,7 @@ static void window_text_input_mouseup(rct_window *w, rct_widgetindex widgetIndex
     case WIDX_OKAY:
         context_stop_text_input();
         // Pass back the text that has been entered.
-        // ecx when none zero means text input success
+        // ecx when nonzero means text input success
         if (calling_w != nullptr)
             window_event_textinput_call(calling_w, calling_widget, text_input);
         window_close(w);
@@ -252,10 +194,10 @@ static void window_text_input_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
     window_draw_widgets(w, dpi);
 
-    sint32 y = w->y + 25;
+    int32_t y = w->y + 25;
 
-    sint32 no_lines = 0;
-    sint32 font_height = 0;
+    int32_t no_lines = 0;
+    int32_t font_height = 0;
 
 
     gfx_draw_string_centred(dpi, input_text_description, w->x + WW / 2, y, w->colours[1], &TextInputDescriptionArgs);
@@ -278,11 +220,11 @@ static void window_text_input_paint(rct_window *w, rct_drawpixelinfo *dpi)
 
     char* wrap_pointer = wrapped_string;
     size_t char_count = 0;
-    uint8 cur_drawn = 0;
+    uint8_t cur_drawn = 0;
 
-    sint32 cursorX = 0;
-    sint32 cursorY = 0;
-    for (sint32 line = 0; line <= no_lines; line++) {
+    int32_t cursorX = 0;
+    int32_t cursorY = 0;
+    for (int32_t line = 0; line <= no_lines; line++) {
         gfx_draw_string(dpi, wrap_pointer, w->colours[1], w->x + 12, y);
 
         size_t string_length = get_string_size(wrap_pointer) - 1;
@@ -294,18 +236,18 @@ static void window_text_input_paint(rct_window *w, rct_drawpixelinfo *dpi)
             cursorX = w->x + 13 + gfx_get_string_width(temp_string);
             cursorY = y;
 
-            sint32 width = 6;
+            int32_t width = 6;
             if (gTextInput->SelectionStart < strlen(text_input)){
                 // Make a 1 utf8-character wide string for measuring the width
                 // of the currently selected character.
                 utf8 tmp[5] = { 0 }; // This is easier than setting temp_string[0..5]
-                uint32 codepoint = utf8_get_next(text_input + gTextInput->SelectionStart, nullptr);
+                uint32_t codepoint = utf8_get_next(text_input + gTextInput->SelectionStart, nullptr);
                 utf8_write_codepoint(tmp, codepoint);
-                width = Math::Max(gfx_get_string_width(tmp) - 2, 4);
+                width = std::max(gfx_get_string_width(tmp) - 2, 4);
             }
 
             if (w->frame_no > 15){
-                uint8 colour = ColourMapA[w->colours[1]].mid_light;
+                uint8_t colour = ColourMapA[w->colours[1]].mid_light;
                 // TODO: palette index addition
                 gfx_fill_rect(dpi, cursorX, y + 9, cursorX + width, y + 9, colour + 5);
             }
@@ -340,7 +282,7 @@ void window_text_input_key(rct_window* w, char keychar)
         window_close(w);
         rct_window* calling_w = window_find_by_number(calling_class, calling_number);
         // Pass back the text that has been entered.
-        // ecx when none zero means text input success
+        // ecx when nonzero means text input success
         if (calling_w)
             window_event_textinput_call(calling_w, calling_widget, text_input);
     }
@@ -376,13 +318,13 @@ static void window_text_input_invalidate(rct_window *w)
     char wrapped_string[TEXT_INPUT_SIZE];
     safe_strcpy(wrapped_string, text_input, TEXT_INPUT_SIZE);
 
-    sint32 no_lines = 0, font_height = 0;
+    int32_t no_lines = 0, font_height = 0;
 
     // String length needs to add 12 either side of box
     // +13 for cursor when max length.
     gfx_wrap_string(wrapped_string, WW - (24 + 13), &no_lines, &font_height);
 
-    sint32 height = no_lines * 10 + WH;
+    int32_t height = no_lines * 10 + WH;
 
     // Change window size if required.
     if (height != w->height) {

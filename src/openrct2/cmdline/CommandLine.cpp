@@ -1,32 +1,23 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
-#include "../core/Guard.hpp"
-
-#include "../platform/platform.h"
-#include "../OpenRCT2.h"
+#include <cstring>
 
 #include "../core/Console.hpp"
 #include "../core/Math.hpp"
 #include "../core/String.hpp"
+#include "../OpenRCT2.h"
 #include "CommandLine.hpp"
 
 #pragma region CommandLineArgEnumerator
 
-CommandLineArgEnumerator::CommandLineArgEnumerator(const char * const * arguments, sint32 count)
+CommandLineArgEnumerator::CommandLineArgEnumerator(const char * const * arguments, int32_t count)
 {
     _arguments = arguments;
     _count = count;
@@ -64,12 +55,12 @@ bool CommandLineArgEnumerator::TryPop()
     }
 }
 
-bool CommandLineArgEnumerator::TryPopInteger(sint32 * result)
+bool CommandLineArgEnumerator::TryPopInteger(int32_t * result)
 {
     char const * arg;
     if (TryPopString(&arg))
     {
-        *result = (sint32)atol(arg);
+        *result = (int32_t)atol(arg);
         return true;
     }
 
@@ -169,8 +160,8 @@ namespace CommandLine
         const CommandLineCommand * command;
         for (command = commands; command->Name != nullptr; command++)
         {
-            maxNameLength = Math::Max(maxNameLength, String::LengthOf(command->Name));
-            maxParamsLength = Math::Max(maxParamsLength, String::LengthOf(command->Parameters));
+            maxNameLength = std::max(maxNameLength, String::LengthOf(command->Name));
+            maxParamsLength = std::max(maxParamsLength, String::LengthOf(command->Parameters));
         }
 
         for (command = commands; command->Name != nullptr; command++)
@@ -217,7 +208,7 @@ namespace CommandLine
             char buffer[128];
             GetOptionCaption(buffer, sizeof(buffer), option);
             size_t optionCaptionLength = String::LengthOf(buffer);
-            maxOptionLength = Math::Max(maxOptionLength, optionCaptionLength);
+            maxOptionLength = std::max(maxOptionLength, optionCaptionLength);
         }
 
         option = options;
@@ -245,7 +236,7 @@ namespace CommandLine
         for (example = examples; example->Arguments != nullptr; example++)
         {
             size_t argumentsLength = String::LengthOf(example->Arguments);
-            maxArgumentsLength = Math::Max(maxArgumentsLength, argumentsLength);
+            maxArgumentsLength = std::max(maxArgumentsLength, argumentsLength);
         }
 
         Console::WriteLine("examples:");
@@ -465,11 +456,7 @@ namespace CommandLine
             }
             else if (shortOption[1] != '\0')
             {
-                if (!ParseOptionValue(option, &shortOption[1]))
-                {
-                    return false;
-                }
-                return true;
+                return ParseOptionValue(option, &shortOption[1]);
             }
         }
 
@@ -500,7 +487,7 @@ namespace CommandLine
             *((bool *)option->OutAddress) = true;
             return true;
         case CMDLINE_TYPE_INTEGER:
-            *((sint32 *)option->OutAddress) = (sint32)atol(valueString);
+            *((int32_t *)option->OutAddress) = (int32_t)atol(valueString);
             return true;
         case CMDLINE_TYPE_REAL:
             *((float *)option->OutAddress) = (float)atof(valueString);
@@ -514,7 +501,7 @@ namespace CommandLine
         }
     }
 
-    static bool HandleSpecialArgument(const char * argument)
+    static bool HandleSpecialArgument([[maybe_unused]] const char * argument)
     {
 #ifdef __APPLE__
         if (String::Equals(argument, "-NSDocumentRevisionsDebugMode"))
@@ -528,7 +515,6 @@ namespace CommandLine
 #endif
         return false;
     }
-
 
     const CommandLineOptionDefinition * FindOption(const CommandLineOptionDefinition * options, char shortName)
     {
@@ -553,40 +539,38 @@ namespace CommandLine
         }
         return nullptr;
     }
-}
+} // namespace CommandLine
 
-extern "C"
+int32_t cmdline_run(const char * * argv, int32_t argc)
 {
-    sint32 cmdline_run(const char * * argv, sint32 argc)
+    auto argEnumerator = CommandLineArgEnumerator(argv, argc);
+
+    // Pop process path
+    argEnumerator.TryPop();
+
+    const CommandLineCommand * command = CommandLine::FindCommandFor(CommandLine::RootCommands, &argEnumerator);
+
+    if (command == nullptr)
     {
-        auto argEnumerator = CommandLineArgEnumerator(argv, argc);
+        return EXITCODE_FAIL;
+    }
 
-        // Pop process path
-        argEnumerator.TryPop();
-
-        const CommandLineCommand * command = CommandLine::FindCommandFor(CommandLine::RootCommands, &argEnumerator);
-
-        if (command == nullptr)
+    if (command->Options != nullptr)
+    {
+        auto argEnumeratorForOptions = CommandLineArgEnumerator(argEnumerator);
+        if (!CommandLine::ParseOptions(command->Options, &argEnumeratorForOptions))
         {
             return EXITCODE_FAIL;
         }
+    }
 
-        if (command->Options != nullptr)
-        {
-            auto argEnumeratorForOptions = CommandLineArgEnumerator(argEnumerator);
-            if (!CommandLine::ParseOptions(command->Options, &argEnumeratorForOptions))
-            {
-                return EXITCODE_FAIL;
-            }
-        }
-
-        if (command == CommandLine::RootCommands && command->Func == nullptr)
-        {
-            return CommandLine::HandleCommandDefault();
-        }
-        else
-        {
-            return command->Func(&argEnumerator);
-        }
+    if (command == CommandLine::RootCommands && command->Func == nullptr)
+    {
+        return CommandLine::HandleCommandDefault();
+    }
+    else
+    {
+        return command->Func(&argEnumerator);
     }
 }
+

@@ -1,22 +1,16 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <algorithm>
 #include <memory>
 #include <vector>
+#include "../Context.h"
 #include "../config/Config.h"
 #include "../core/Collections.hpp"
 #include "../core/Console.hpp"
@@ -25,6 +19,7 @@
 #include "../core/FileStream.hpp"
 #include "../core/Path.hpp"
 #include "../core/String.hpp"
+#include "../localisation/LocalisationService.h"
 #include "../object/ObjectRepository.h"
 #include "../object/RideObject.h"
 #include "../PlatformEnvironment.h"
@@ -39,9 +34,9 @@ struct TrackRepositoryItem
 {
     std::string Name;
     std::string Path;
-    uint8 RideType = 0;
+    uint8_t RideType = 0;
     std::string ObjectEntry;
-    uint32 Flags = 0;
+    uint32_t Flags = 0;
 };
 
 enum TRACK_REPO_ITEM_FLAGS
@@ -49,37 +44,37 @@ enum TRACK_REPO_ITEM_FLAGS
     TRIF_READ_ONLY = (1 << 0),
 };
 
-static std::string GetNameFromTrackPath(const std::string &path)
+std::string GetNameFromTrackPath(const std::string &path)
 {
     std::string name = Path::GetFileNameWithoutExtension(path);
     //The track name should be the file name until the first instance of a dot
-    name = name.substr(0, name.find_first_of("."));
+    name = name.substr(0, name.find_first_of('.'));
     return name;
 }
 
 class TrackDesignFileIndex final : public FileIndex<TrackRepositoryItem>
 {
 private:
-    static constexpr uint32 MAGIC_NUMBER = 0x58444954; // TIDX
-    static constexpr uint16 VERSION = 2;
+    static constexpr uint32_t MAGIC_NUMBER = 0x58444954; // TIDX
+    static constexpr uint16_t VERSION = 2;
     static constexpr auto PATTERN = "*.td4;*.td6";
 
 public:
-    explicit TrackDesignFileIndex(IPlatformEnvironment * env) :
+    explicit TrackDesignFileIndex(const IPlatformEnvironment &env) :
         FileIndex("track design index",
             MAGIC_NUMBER,
             VERSION,
-            env->GetFilePath(PATHID::CACHE_TRACKS),
+            env.GetFilePath(PATHID::CACHE_TRACKS),
             std::string(PATTERN),
             std::vector<std::string>({
-                env->GetDirectoryPath(DIRBASE::RCT1, DIRID::TRACK),
-                env->GetDirectoryPath(DIRBASE::RCT2, DIRID::TRACK),
-                env->GetDirectoryPath(DIRBASE::USER, DIRID::TRACK) }))
+                env.GetDirectoryPath(DIRBASE::RCT1, DIRID::TRACK),
+                env.GetDirectoryPath(DIRBASE::RCT2, DIRID::TRACK),
+                env.GetDirectoryPath(DIRBASE::USER, DIRID::TRACK) }))
     {
     }
 
 public:
-    std::tuple<bool, TrackRepositoryItem> Create(const std::string &path) const override
+    std::tuple<bool, TrackRepositoryItem> Create(int32_t, const std::string &path) const override
     {
         auto td6 = track_design_open(path.c_str());
         if (td6 != nullptr)
@@ -118,9 +113,9 @@ protected:
         TrackRepositoryItem item;
         item.Name = stream->ReadStdString();
         item.Path = stream->ReadStdString();
-        item.RideType = stream->ReadValue<uint8>();
+        item.RideType = stream->ReadValue<uint8_t>();
         item.ObjectEntry = stream->ReadStdString();
-        item.Flags = stream->ReadValue<uint32>();
+        item.Flags = stream->ReadValue<uint32_t>();
         return item;
     }
 
@@ -136,19 +131,17 @@ private:
 class TrackDesignRepository final : public ITrackDesignRepository
 {
 private:
-    IPlatformEnvironment * const _env;
+    std::shared_ptr<IPlatformEnvironment> const _env;
     TrackDesignFileIndex const _fileIndex;
     std::vector<TrackRepositoryItem> _items;
 
 public:
-    explicit TrackDesignRepository(IPlatformEnvironment * env)
+    explicit TrackDesignRepository(const std::shared_ptr<IPlatformEnvironment>& env)
         : _env(env),
-          _fileIndex(env)
+          _fileIndex(*env)
     {
         Guard::ArgumentNotNull(env);
     }
-
-    ~TrackDesignRepository() = default;
 
     size_t GetCount() const override
     {
@@ -157,14 +150,12 @@ public:
 
     /**
      *
-     * @param rideType
      * @param entry The entry name to count the track list of. Leave empty to count track list for the non-separated types (e.g. Hyper-Twister, Car Ride)
-     * @return
      */
-    size_t GetCountForObjectEntry(uint8 rideType, const std::string &entry) const override
+    size_t GetCountForObjectEntry(uint8_t rideType, const std::string &entry) const override
     {
         size_t count = 0;
-        const IObjectRepository * repo = GetObjectRepository();
+        const auto repo = GetContext()->GetObjectRepository();
 
         for (const auto &item : _items)
         {
@@ -190,10 +181,10 @@ public:
         return count;
     }
 
-    size_t GetCountForRideGroup(uint8 rideType, const RideGroup * rideGroup) const override
+    size_t GetCountForRideGroup(uint8_t rideType, const RideGroup * rideGroup) const override
     {
         size_t count = 0;
-        const IObjectRepository * repo = GetObjectRepository();
+        const auto repo = GetContext()->GetObjectRepository();
 
         for (const auto &item : _items)
         {
@@ -203,10 +194,10 @@ public:
             }
 
             const ObjectRepositoryItem * ori = repo->FindObject(item.ObjectEntry.c_str());
-            uint8 rideGroupIndex = (ori != nullptr) ? ori->RideGroupIndex : 0;
+            uint8_t rideGroupIndex = (ori != nullptr) ? ori->RideInfo.RideGroupIndex : 0;
             const RideGroup * itemRideGroup = RideGroupManager::RideGroupFind(rideType, rideGroupIndex);
 
-            if (itemRideGroup != nullptr && RideGroupManager::RideGroupsAreEqual(itemRideGroup, rideGroup))
+            if (itemRideGroup != nullptr && itemRideGroup->Equals(rideGroup))
             {
                 count++;
             }
@@ -217,15 +208,12 @@ public:
 
     /**
      *
-     * @param outRefs
-     * @param rideType
      * @param entry The entry name to build a track list for. Leave empty to build track list for the non-separated types (e.g. Hyper-Twister, Car Ride)
-     * @return
      */
-    size_t GetItemsForObjectEntry(track_design_file_ref * * outRefs, uint8 rideType, const std::string &entry) const override
+    std::vector<track_design_file_ref> GetItemsForObjectEntry(uint8_t rideType, const std::string &entry) const override
     {
         std::vector<track_design_file_ref> refs;
-        const IObjectRepository * repo = GetObjectRepository();
+        const auto repo = GetContext()->GetObjectRepository();
 
         for (const auto &item : _items)
         {
@@ -252,14 +240,13 @@ public:
             }
         }
 
-        *outRefs = Collections::ToArray(refs);
-        return refs.size();
+        return refs;
     }
 
-    size_t GetItemsForRideGroup(track_design_file_ref **outRefs, uint8 rideType, const RideGroup * rideGroup) const override
+    std::vector<track_design_file_ref> GetItemsForRideGroup(uint8_t rideType, const RideGroup * rideGroup) const override
     {
         std::vector<track_design_file_ref> refs;
-        const IObjectRepository * repo = GetObjectRepository();
+        const auto repo = GetContext()->GetObjectRepository();
 
         for (const auto &item : _items)
         {
@@ -269,10 +256,10 @@ public:
             }
 
             const ObjectRepositoryItem * ori = repo->FindObject(item.ObjectEntry.c_str());
-            uint8 rideGroupIndex = (ori != nullptr) ? ori->RideGroupIndex : 0;
+            uint8_t rideGroupIndex = (ori != nullptr) ? ori->RideInfo.RideGroupIndex : 0;
             const RideGroup * itemRideGroup = RideGroupManager::RideGroupFind(rideType, rideGroupIndex);
 
-            if (itemRideGroup != nullptr && RideGroupManager::RideGroupsAreEqual(itemRideGroup, rideGroup))
+            if (itemRideGroup != nullptr && itemRideGroup->Equals(rideGroup))
             {
                 track_design_file_ref ref;
                 ref.name = String::Duplicate(GetNameFromTrackPath(item.Path));
@@ -281,14 +268,13 @@ public:
             }
         }
 
-        *outRefs = Collections::ToArray(refs);
-        return refs.size();
+        return refs;
     }
 
-    void Scan() override
+    void Scan(int32_t language) override
     {
         _items.clear();
-        auto trackDesigns = _fileIndex.LoadOrBuild();
+        auto trackDesigns = _fileIndex.LoadOrBuild(language);
         for (const auto &td : trackDesigns)
         {
             _items.push_back(td);
@@ -348,7 +334,8 @@ public:
         std::string newPath = Path::Combine(installDir, fileName);
         if (File::Copy(path, newPath, false))
         {
-            auto td = _fileIndex.Create(path);
+            auto language = LocalisationService_GetCurrentLanguage();
+            auto td = _fileIndex.Create(language, path);
             if (std::get<0>(td))
             {
                 _items.push_back(std::get<1>(td));
@@ -397,61 +384,33 @@ private:
     }
 };
 
-static TrackDesignRepository * _trackDesignRepository = nullptr;
-
-ITrackDesignRepository * CreateTrackDesignRepository(IPlatformEnvironment * env)
+std::unique_ptr<ITrackDesignRepository> CreateTrackDesignRepository(const std::shared_ptr<IPlatformEnvironment>& env)
 {
-    _trackDesignRepository = new TrackDesignRepository(env);
-    return _trackDesignRepository;
+    return std::make_unique<TrackDesignRepository>(env);
 }
 
-ITrackDesignRepository * GetTrackDesignRepository()
+void track_repository_scan()
 {
-    return _trackDesignRepository;
+    ITrackDesignRepository * repo = GetContext()->GetTrackDesignRepository();
+    repo->Scan(LocalisationService_GetCurrentLanguage());
 }
 
-extern "C"
+bool track_repository_delete(const utf8 * path)
 {
-    void track_repository_scan()
-    {
-        ITrackDesignRepository * repo = GetTrackDesignRepository();
-        repo->Scan();
-    }
+    ITrackDesignRepository * repo = GetContext()->GetTrackDesignRepository();
+    return repo->Delete(path);
+}
 
-    size_t track_repository_get_items_for_ride(track_design_file_ref * * outRefs, uint8 rideType, const utf8 * entry)
-    {
-        ITrackDesignRepository * repo = GetTrackDesignRepository();
-        return repo->GetItemsForObjectEntry(outRefs, rideType, String::ToStd(entry));
-    }
+bool track_repository_rename(const utf8 * path, const utf8 * newName)
+{
+    ITrackDesignRepository * repo = GetContext()->GetTrackDesignRepository();
+    std::string newPath = repo->Rename(path, newName);
+    return !newPath.empty();
+}
 
-    size_t track_repository_get_items_for_ride_group(track_design_file_ref * * outRefs, uint8 rideType, const RideGroup * rideGroup)
-    {
-        ITrackDesignRepository * repo = GetTrackDesignRepository();
-        return repo->GetItemsForRideGroup(outRefs, rideType, rideGroup);
-    }
-
-    bool track_repository_delete(const utf8 * path)
-    {
-        ITrackDesignRepository * repo = GetTrackDesignRepository();
-        return repo->Delete(path);
-    }
-
-    bool track_repository_rename(const utf8 * path, const utf8 * newName)
-    {
-        ITrackDesignRepository * repo = GetTrackDesignRepository();
-        std::string newPath = repo->Rename(path, newName);
-        return !newPath.empty();
-    }
-
-    bool track_repository_install(const utf8 * srcPath)
-    {
-        ITrackDesignRepository * repo = GetTrackDesignRepository();
-        std::string newPath = repo->Install(srcPath);
-        return !newPath.empty();
-    }
-
-    utf8 * track_repository_get_name_from_path(const utf8 * path)
-    {
-        return String::Duplicate(GetNameFromTrackPath(path));
-    }
+bool track_repository_install(const utf8 * srcPath)
+{
+    ITrackDesignRepository * repo = GetContext()->GetTrackDesignRepository();
+    std::string newPath = repo->Install(srcPath);
+    return !newPath.empty();
 }

@@ -1,70 +1,48 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
+#include <array>
+#include <vector>
 #include "Context.h"
 #include "Editor.h"
 #include "EditorObjectSelectionSession.h"
 #include "FileClassifier.h"
 #include "Game.h"
+#include "GameState.h"
 #include "OpenRCT2.h"
 #include "ParkImporter.h"
 #include "audio/audio.h"
 #include "core/Math.hpp"
-#include "interface/viewport.h"
-#include "localisation/localisation.h"
+#include "interface/Viewport.h"
+#include "localisation/Localisation.h"
 #include "management/NewsItem.h"
 #include "object/ObjectManager.h"
-#include "object/ObjectRepository.h"
-#include "ObjectList.h"
 #include "peep/Staff.h"
-#include "rct1.h"
+#include "rct1/RCT1.h"
+#include "scenario/Scenario.h"
 #include "util/Util.h"
 #include "windows/Intent.h"
 #include "world/Climate.h"
+#include "world/Entrance.h"
+#include "world/Footpath.h"
+#include "world/Scenery.h"
+#include "world/Park.h"
+#include "ui/UiContext.h"
+#include "ui/WindowManager.h"
+
+using namespace OpenRCT2;
 
 namespace Editor
 {
-    static uint8 _editorSelectedRides[MAX_RIDE_OBJECTS];
-    static uint8 _editorSelectedSmallScenery[MAX_SMALL_SCENERY_OBJECTS];
-    static uint8 _editorSelectedLargeScenery[MAX_LARGE_SCENERY_OBJECTS];
-    static uint8 _editorSelectedWalls[MAX_WALL_SCENERY_OBJECTS];
-    static uint8 _editorSelectedBanners[MAX_BANNER_OBJECTS];
-    static uint8 _editorSelectedFootpaths[MAX_PATH_OBJECTS];
-    static uint8 _editorSelectedFootpathAdditions[MAX_PATH_ADDITION_OBJECTS];
-    static uint8 _editorSelectedSceneryGroups[MAX_SCENERY_GROUP_OBJECTS];
-    static uint8 _editorSelectedParkEntrances[MAX_PARK_ENTRANCE_OBJECTS];
-    static uint8 _editorSelectedWaters[MAX_WATER_OBJECTS];
-    static uint8 _editorSelectedStexs[MAX_SCENARIO_TEXT_OBJECTS];
+    static std::array<std::vector<uint8_t>, OBJECT_TYPE_COUNT> _editorSelectedObjectFlags;
 
-    uint8 * SelectedObjects[OBJECT_TYPE_COUNT] =
-    {
-        _editorSelectedRides,
-        _editorSelectedSmallScenery,
-        _editorSelectedLargeScenery,
-        _editorSelectedWalls,
-        _editorSelectedBanners,
-        _editorSelectedFootpaths,
-        _editorSelectedFootpathAdditions,
-        _editorSelectedSceneryGroups,
-        _editorSelectedParkEntrances,
-        _editorSelectedWaters,
-        _editorSelectedStexs,
-    };
-
-    static void ConvertSaveToScenarioCallback(sint32 result, const utf8 * path);
+    static void ConvertSaveToScenarioCallback(int32_t result, const utf8 * path);
     static void SetAllLandOwned();
     static bool LoadLandscapeFromSV4(const char * path);
     static bool LoadLandscapeFromSC4(const char * path);
@@ -81,7 +59,7 @@ namespace Editor
         audio_stop_all_music_and_sounds();
         object_manager_unload_all_objects();
         object_list_load();
-        game_init_all(150);
+        OpenRCT2::GetContext()->GetGameState()->InitAll(150);
         gScreenFlags = SCREEN_FLAGS_SCENARIO_EDITOR;
         gS6Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         gParkFlags |= PARK_FLAGS_SHOW_REAL_GUEST_NAMES;
@@ -108,7 +86,7 @@ namespace Editor
         context_open_intent(&intent);
     }
 
-    static void ConvertSaveToScenarioCallback(sint32 result, const utf8 * path)
+    static void ConvertSaveToScenarioCallback(int32_t result, const utf8 * path)
     {
         if (result != MODAL_RESULT_OK)
         {
@@ -160,7 +138,7 @@ namespace Editor
 
         object_manager_unload_all_objects();
         object_list_load();
-        game_init_all(150);
+        OpenRCT2::GetContext()->GetGameState()->InitAll(150);
         SetAllLandOwned();
         gS6Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         viewport_init_all();
@@ -181,7 +159,7 @@ namespace Editor
 
         object_manager_unload_all_objects();
         object_list_load();
-        game_init_all(150);
+        OpenRCT2::GetContext()->GetGameState()->InitAll(150);
         SetAllLandOwned();
         gS6Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         viewport_init_all();
@@ -196,7 +174,7 @@ namespace Editor
      */
     static void SetAllLandOwned()
     {
-        sint32 mapSize = gMapSize;
+        int32_t mapSize = gMapSize;
 
         game_do_command(64, 1, 64, 2, GAME_COMMAND_SET_LAND_OWNERSHIP, (mapSize - 3) * 32, (mapSize - 3) * 32);
     }
@@ -211,7 +189,7 @@ namespace Editor
         //        after we have loaded a new park.
         window_close_all();
 
-        uint32 extension = get_file_extension_type(path);
+        uint32_t extension = get_file_extension_type(path);
         switch (extension)
         {
         case FILE_EXTENSION_SC6:
@@ -264,22 +242,15 @@ namespace Editor
      */
     static bool ReadS6(const char * path)
     {
-        ParkLoadResult * loadResult = nullptr;
-        const char     * extension  = path_get_extension(path);
+        auto extension  = path_get_extension(path);
         if (_stricmp(extension, ".sc6") == 0)
         {
-            loadResult = load_from_sc6(path);
+            load_from_sc6(path);
         }
         else if (_stricmp(extension, ".sv6") == 0)
         {
-            loadResult = load_from_sv6(path);
+            load_from_sv6(path);
         }
-        if (ParkLoadResult_GetError(loadResult) != PARK_LOAD_ERROR_OK)
-        {
-            ParkLoadResult_Delete(loadResult);
-            return false;
-        }
-        ParkLoadResult_Delete(loadResult);
 
         ClearMapForEditing(true);
 
@@ -307,7 +278,7 @@ namespace Editor
 
         //
         {
-            sint32 i;
+            int32_t i;
             Ride * ride;
             FOR_ALL_RIDES(i, ride)
                 {
@@ -318,7 +289,7 @@ namespace Editor
         ride_init_all();
 
         //
-        for (sint32 i = 0; i < MAX_SPRITES; i++)
+        for (int32_t i = 0; i < MAX_SPRITES; i++)
         {
             rct_sprite * sprite = get_sprite(i);
             user_string_free(sprite->unknown.name_string_idx);
@@ -333,7 +304,6 @@ namespace Editor
         if (fromSave)
         {
             research_populate_list_random();
-            research_remove_non_separate_vehicle_types();
 
             if (gParkFlags & PARK_FLAGS_NO_MONEY)
             {
@@ -356,9 +326,9 @@ namespace Editor
 
             gParkFlags &= ~PARK_FLAGS_SPRITES_INITIALISED;
 
-            gGuestInitialCash = Math::Clamp((money16)MONEY(10, 00), gGuestInitialCash, (money16)MONEY(100, 00));
+            gGuestInitialCash = Math::Clamp((money16)MONEY(10, 00), gGuestInitialCash, (money16)MAX_ENTRANCE_FEE);
 
-            gInitialCash = Math::Min(gInitialCash, 100000);
+            gInitialCash = std::min(gInitialCash, 100000);
             finance_reset_cash_to_initial();
 
             gBankLoan = Math::Clamp(
@@ -373,7 +343,7 @@ namespace Editor
                 MONEY(5000000, 00)
             );
 
-            gBankLoanInterestRate = Math::Clamp((uint8)5, gBankLoanInterestRate, (uint8)80);
+            gBankLoanInterestRate = Math::Clamp((uint8_t)5, gBankLoanInterestRate, (uint8_t)80);
         }
 
         climate_reset(gClimate);
@@ -441,52 +411,25 @@ namespace Editor
 
     static void FinaliseMainView()
     {
-        rct_window   * w        = window_get_main();
-        rct_viewport * viewport = w->viewport;
+        auto windowManager = GetContext()->GetUiContext()->GetWindowManager();
+        windowManager->SetMainView(gSavedViewX, gSavedViewY, gSavedViewZoom, gSavedViewRotation);
 
-        w->viewport_target_sprite = SPRITE_INDEX_NULL;
-        w->saved_view_x           = gSavedViewX;
-        w->saved_view_y           = gSavedViewY;
-        gCurrentRotation = gSavedViewRotation;
-
-        sint32 zoom_difference = gSavedViewZoom - viewport->zoom;
-        viewport->zoom = gSavedViewZoom;
-        if (zoom_difference != 0)
-        {
-            if (zoom_difference >= 0)
-            {
-                viewport->view_width <<= zoom_difference;
-                viewport->view_height <<= zoom_difference;
-            }
-            else
-            {
-                zoom_difference = -zoom_difference;
-                viewport->view_width >>= zoom_difference;
-                viewport->view_height >>= zoom_difference;
-            }
-        }
-        w->saved_view_x -= viewport->view_width >> 1;
-        w->saved_view_y -= viewport->view_height >> 1;
-
-        window_invalidate(w);
         reset_all_sprite_quadrant_placements();
         scenery_set_default_placement_configuration();
 
-        auto intent = Intent(INTENT_ACTION_REFRESH_NEW_RIDES);
-        context_broadcast_intent(&intent);
+        windowManager->BroadcastIntent(Intent(INTENT_ACTION_REFRESH_NEW_RIDES));
 
         gWindowUpdateTicks = 0;
         load_palette();
 
-        intent = Intent(INTENT_ACTION_CLEAR_TILE_INSPECTOR_CLIPBOARD);
-        context_broadcast_intent(&intent);
+        windowManager->BroadcastIntent(Intent(INTENT_ACTION_CLEAR_TILE_INSPECTOR_CLIPBOARD));
     }
 
     /**
      *
      *  rct2: 0x006AB9B8
      */
-    sint32 CheckObjectSelection()
+    int32_t CheckObjectSelection()
     {
         bool isTrackDesignerManager =
                  gScreenFlags & (SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER);
@@ -530,14 +473,14 @@ namespace Editor
      */
     bool CheckPark()
     {
-        sint32 parkSize = park_calculate_size();
+        int32_t parkSize = park_calculate_size();
         if (parkSize == 0)
         {
             gGameCommandErrorText = STR_PARK_MUST_OWN_SOME_LAND;
             return false;
         }
 
-        for (sint32 i = 0; i < MAX_PARK_ENTRANCES; i++)
+        for (int32_t i = 0; i < MAX_PARK_ENTRANCES; i++)
         {
             if (gParkEntrances[i].x != LOCATION_NULL)
             {
@@ -558,10 +501,10 @@ namespace Editor
                 continue;
             }
 
-            sint32 x         = parkEntrance.x;
-            sint32 y         = parkEntrance.y;
-            sint32 z         = parkEntrance.z / 8;
-            sint32 direction = parkEntrance.direction ^ 2;
+            int32_t x         = parkEntrance.x;
+            int32_t y         = parkEntrance.y;
+            int32_t z         = parkEntrance.z / 8;
+            int32_t direction = parkEntrance.direction ^ 2;
 
             switch (footpath_is_connected_to_map_edge(x, y, z, direction, 0))
             {
@@ -579,7 +522,7 @@ namespace Editor
             }
         }
 
-        for (sint32 i = 0; i < MAX_PEEP_SPAWNS; i++)
+        for (int32_t i = 0; i < MAX_PEEP_SPAWNS; i++)
         {
             if (gPeepSpawns[i].x != PEEP_SPAWN_UNDEFINED)
             {
@@ -596,7 +539,14 @@ namespace Editor
         return true;
     }
 
-    void GameCommandEditScenarioOptions(sint32 * eax, sint32 * ebx, sint32 * ecx, sint32 * edx, sint32 * esi, sint32 * edi, sint32 * ebp)
+    void GameCommandEditScenarioOptions(
+        [[maybe_unused]] int32_t * eax,
+        int32_t *                  ebx,
+        int32_t *                  ecx,
+        int32_t *                  edx,
+        [[maybe_unused]] int32_t * esi,
+        [[maybe_unused]] int32_t * edi,
+        [[maybe_unused]] int32_t * ebp)
     {
         if (!(*ebx & GAME_COMMAND_FLAG_APPLY))
         {
@@ -645,12 +595,12 @@ namespace Editor
             break;
         case EDIT_SCENARIOOPTIONS_SETINITIALLOAN:
             gBankLoan    = Math::Clamp(MONEY(0, 00), *edx, MONEY(5000000, 00));
-            gMaxBankLoan = Math::Max(gBankLoan, gMaxBankLoan);
+            gMaxBankLoan = std::max(gBankLoan, gMaxBankLoan);
             window_invalidate_by_class(WC_FINANCES);
             break;
         case EDIT_SCENARIOOPTIONS_SETMAXIMUMLOANSIZE:
             gMaxBankLoan = Math::Clamp(MONEY(0, 00), *edx, MONEY(5000000, 00));
-            gBankLoan    = Math::Min(gBankLoan, gMaxBankLoan);
+            gBankLoan    = std::min(gBankLoan, gMaxBankLoan);
             window_invalidate_by_class(WC_FINANCES);
             break;
         case EDIT_SCENARIOOPTIONS_SETANNUALINTERESTRATE:
@@ -749,7 +699,7 @@ namespace Editor
             }
             break;
         case EDIT_SCENARIOOPTIONS_SETPARKCHARGEENTRYFEE:
-            gParkEntranceFee = Math::Clamp(MONEY(0, 00), *edx, MONEY(100, 00));
+            gParkEntranceFee = Math::Clamp(MONEY(0, 00), *edx, MAX_ENTRANCE_FEE);
             window_invalidate_by_class(WC_PARK_INFORMATION);
             break;
         case EDIT_SCENARIOOPTIONS_SETFORBIDTREEREMOVAL:
@@ -806,17 +756,46 @@ namespace Editor
         window_invalidate_by_class(WC_EDITOR_SCENARIO_OPTIONS);
         *ebx = 0;
     }
+
+    uint8_t GetSelectedObjectFlags(int32_t objectType, size_t index)
+    {
+        uint8_t result = 0;
+        auto &list = _editorSelectedObjectFlags[objectType];
+        if (list.size() > index)
+        {
+            result = list[index];
+        }
+        return result;
+    }
+
+    void ClearSelectedObject(int32_t objectType, size_t index, uint32_t flags)
+    {
+        auto &list = _editorSelectedObjectFlags[objectType];
+        if (list.size() <= index)
+        {
+            list.resize(index + 1);
+        }
+        list[index] &= ~flags;
+    }
+
+    void SetSelectedObject(int32_t objectType, size_t index, uint32_t flags)
+    {
+        auto &list = _editorSelectedObjectFlags[objectType];
+        if (list.size() <= index)
+        {
+            list.resize(index + 1);
+        }
+        list[index] |= flags;
+    }
 }
 
-extern "C"
+void editor_open_windows_for_current_step()
 {
-    void editor_open_windows_for_current_step()
-    {
-        Editor::OpenWindowsForCurrentStep();
-    }
-
-    void game_command_edit_scenario_options(sint32 * eax, sint32 * ebx, sint32 * ecx, sint32 * edx, sint32 * esi, sint32 * edi, sint32 * ebp)
-    {
-        Editor::GameCommandEditScenarioOptions(eax, ebx, ecx, edx, esi, edi, ebp);
-    }
+    Editor::OpenWindowsForCurrentStep();
 }
+
+void game_command_edit_scenario_options(int32_t * eax, int32_t * ebx, int32_t * ecx, int32_t * edx, int32_t * esi, int32_t * edi, int32_t * ebp)
+{
+    Editor::GameCommandEditScenarioOptions(eax, ebx, ecx, edx, esi, edi, ebp);
+}
+

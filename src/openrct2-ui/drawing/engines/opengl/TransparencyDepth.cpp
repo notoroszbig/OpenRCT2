@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #ifndef DISABLE_OPENGL
 
@@ -27,9 +20,9 @@
  */
 struct XData
 {
-    sint32 xposition;
+    int32_t xposition;
     bool begin;
-    sint32 top, bottom;
+    int32_t top, bottom;
 };
 typedef std::vector<XData> SweepLine;
 
@@ -45,10 +38,10 @@ static inline SweepLine CreateXList(const RectCommandBatch &transparent)
 
     for (const DrawRectCommand &command : transparent)
     {
-        sint32 left = std::min(std::max(command.bounds.x, command.clip.x), command.clip.z);
-        sint32 top = std::min(std::max(command.bounds.y, command.clip.y), command.clip.w);
-        sint32 right = std::min(std::max(command.bounds.z, command.clip.x), command.clip.z);
-        sint32 bottom = std::min(std::max(command.bounds.w, command.clip.y), command.clip.w);
+        int32_t left = std::min(std::max(command.bounds.x, command.clip.x), command.clip.z);
+        int32_t top = std::min(std::max(command.bounds.y, command.clip.y), command.clip.w);
+        int32_t right = std::min(std::max(command.bounds.z, command.clip.x), command.clip.z);
+        int32_t bottom = std::min(std::max(command.bounds.w, command.clip.y), command.clip.w);
 
         assert(left <= right);
         assert(top <= bottom);
@@ -77,15 +70,15 @@ static inline SweepLine CreateXList(const RectCommandBatch &transparent)
  */
 struct YData
 {
-    sint32 count, depth;
+    int32_t count, depth;
 };
-typedef std::map<sint32, YData> IntervalTree;
+typedef std::map<int32_t, YData> IntervalTree;
 
 /*
  * Inserts the interval's top endpoint into the interval tree. If the endpoint
  * already exists in the interval tree, it stacks the endpoints.
  */
-static inline IntervalTree::iterator InsertTopEndpoint(IntervalTree &y_intersect, sint32 top)
+static inline IntervalTree::iterator InsertTopEndpoint(IntervalTree &y_intersect, int32_t top)
 {
     auto top_in = y_intersect.insert({top, {1, 0}});
     IntervalTree::iterator top_it = top_in.first;
@@ -109,7 +102,7 @@ static inline IntervalTree::iterator InsertTopEndpoint(IntervalTree &y_intersect
  * endpoint already exists in the interval tree, it stacks the endpoint.
  * This function can produce a new maximum depth.
  */
-static inline IntervalTree::iterator InsertBottomEndpoint(IntervalTree &y_intersect, sint32 bottom)
+static inline IntervalTree::iterator InsertBottomEndpoint(IntervalTree &y_intersect, int32_t bottom)
 {
     auto bottom_in = y_intersect.insert({bottom, {1, 1}});
     IntervalTree::iterator bottom_it = bottom_in.first;
@@ -165,9 +158,9 @@ static inline void RemoveBottomEndpoint(IntervalTree &y_intersect, IntervalTree:
  * to render the command batch. It will never underestimate the number of
  * iterations, but it can overestimate, usually by no more than +2.
  */
-sint32 MaxTransparencyDepth(const RectCommandBatch &transparent)
+int32_t MaxTransparencyDepth(const RectCommandBatch &transparent)
 {
-    sint32 max_depth = 1;
+    int32_t max_depth = 1;
     SweepLine x_sweep = CreateXList(transparent);
     IntervalTree y_intersect{};
 

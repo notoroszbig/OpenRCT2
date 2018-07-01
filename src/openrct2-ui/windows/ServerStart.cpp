@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/Context.h>
 #include <openrct2/config/Config.h>
@@ -21,11 +14,11 @@
 #include <openrct2/windows/Intent.h>
 #include <openrct2-ui/windows/Window.h>
 
-#include <openrct2/interface/chat.h>
-#include <openrct2/interface/themes.h>
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2/interface/Chat.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2/util/Util.h>
+#include "../interface/Theme.h"
 
 static char _port[7];
 static char _name[65];
@@ -33,6 +26,7 @@ static char _description[MAX_SERVER_DESCRIPTION_LENGTH];
 static char _greeting[CHAT_INPUT_SIZE];
 static char _password[33];
 
+// clang-format off
 enum {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -51,10 +45,10 @@ enum {
 };
 
 #define WW 300
-#define WH 152
+#define WH 154
 
 static rct_widget window_server_start_widgets[] = {
-    { WWT_FRAME,            0,  0,      WW-1,   0,          WH-1,   0xFFFFFFFF,                     STR_NONE },                 // panel / background
+    { WWT_FRAME,            0,  0,      WW-1,   0,          WH-1,   STR_NONE,                       STR_NONE },                 // panel / background
     { WWT_CAPTION,          0,  1,      WW-2,   1,          14,     STR_START_SERVER,               STR_WINDOW_TITLE_TIP },     // title bar
     { WWT_CLOSEBOX,         0,  WW-13,  WW-3,   2,          13,     STR_CLOSE_X,                    STR_CLOSE_WINDOW_TIP },     // close x button
     { WWT_TEXT_BOX,         1,  120,    WW-8,   20,         32,     STR_NONE,                       STR_NONE },                 // port text box
@@ -62,12 +56,10 @@ static rct_widget window_server_start_widgets[] = {
     { WWT_TEXT_BOX,         1,  120,    WW-8,   52,         64,     STR_NONE,                       STR_NONE },                 // description text box
     { WWT_TEXT_BOX,         1,  120,    WW-8,   68,         80,     STR_NONE,                       STR_NONE },                 // greeting text box
     { WWT_TEXT_BOX,         1,  120,    WW-8,   84,         96,     STR_NONE,                       STR_NONE },                 // password text box
-    { WWT_SPINNER,          1,  120,    WW-8,   100,        109,    STR_SERVER_MAX_PLAYERS_VALUE,   STR_NONE },                 // max players
-    { WWT_DROPDOWN_BUTTON,  1,  WW-18,  WW-8,   100,        104,    STR_NUMERIC_UP,                 STR_NONE },
-    { WWT_DROPDOWN_BUTTON,  1,  WW-18,  WW-8,   104,        108,    STR_NUMERIC_DOWN,               STR_NONE },
-    { WWT_CHECKBOX,         1,  6,      WW-8,   117,        123,    STR_ADVERTISE,                  STR_ADVERTISE_SERVER_TIP }, // advertise checkbox
-    { WWT_DROPDOWN_BUTTON,  1,  6,      106,    WH-6-11,    WH-6,   STR_NEW_GAME,                   STR_NONE },                 // start server button
-    { WWT_DROPDOWN_BUTTON,  1,  112,    212,    WH-6-11,    WH-6,   STR_LOAD_GAME,                  STR_NONE },
+      SPINNER_WIDGETS      (1,  120,    WW-8,   100,        111,    STR_SERVER_MAX_PLAYERS_VALUE,   STR_NONE),                  // max players (3 widgets)
+    { WWT_CHECKBOX,         1,  6,      WW-8,   117,        130,    STR_ADVERTISE,                  STR_ADVERTISE_SERVER_TIP }, // advertise checkbox
+    { WWT_BUTTON,           1,  6,      106,    WH-6-13,    WH-6,   STR_NEW_GAME,                   STR_NONE },                 // start server button
+    { WWT_BUTTON,           1,  112,    212,    WH-6-13,    WH-6,   STR_LOAD_GAME,                  STR_NONE },
     { WIDGETS_END },
 };
 
@@ -108,6 +100,7 @@ static rct_window_event_list window_server_start_events = {
     window_server_start_paint,
     nullptr
 };
+// clang-format on
 
 rct_window * window_server_start_open()
 {
@@ -173,7 +166,7 @@ static void window_server_start_scenarioselect_callback(const utf8 *path)
     }
 }
 
-static void window_server_start_loadsave_callback(sint32 result, const utf8 * path)
+static void window_server_start_loadsave_callback(int32_t result, const utf8 * path)
 {
     if (result == MODAL_RESULT_OK && context_load_park_from_file(path)) {
         network_begin_server(gConfigNetwork.default_port, gConfigNetwork.listen_address);
@@ -221,7 +214,7 @@ static void window_server_start_mouseup(rct_window *w, rct_widgetindex widgetInd
         window_invalidate(w);
         break;
     case WIDX_START_SERVER:
-        window_scenarioselect_open(window_server_start_scenarioselect_callback);
+        window_scenarioselect_open(window_server_start_scenarioselect_callback, false);
         break;
     case WIDX_LOAD_SERVER:
         network_set_password(_password);
@@ -333,7 +326,7 @@ static void window_server_start_invalidate(rct_window *w)
     colour_scheme_update_by_class(w, WC_SERVER_LIST);
 
     widget_set_checkbox_value(w, WIDX_ADVERTISE_CHECKBOX, gConfigNetwork.advertise);
-    set_format_arg(18, uint16, gConfigNetwork.maxplayers);
+    set_format_arg(18, uint16_t, gConfigNetwork.maxplayers);
 }
 
 static void window_server_start_paint(rct_window *w, rct_drawpixelinfo *dpi)

@@ -1,36 +1,26 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <memory>
 #include "../common.h"
 #include "../core/Console.hpp"
-#include "../core/Exception.hpp"
-#include "../core/Guard.hpp"
 #include "../core/Path.hpp"
 #include "../FileClassifier.h"
 #include "../ParkImporter.h"
 #include "../rct2/S6Exporter.h"
 #include "CommandLine.hpp"
 
-#include "../Game.h"
-#include "../interface/window.h"
+#include "../interface/Window.h"
 #include "../OpenRCT2.h"
 
-static void WriteConvertFromAndToMessage(uint32 sourceFileType, uint32 destinationFileType);
-static const utf8 * GetFileTypeFriendlyName(uint32 fileType);
+static void WriteConvertFromAndToMessage(uint32_t sourceFileType, uint32_t destinationFileType);
+static const utf8 * GetFileTypeFriendlyName(uint32_t fileType);
 
 exitcode_t CommandLine::HandleCommandConvert(CommandLineArgEnumerator * enumerator)
 {
@@ -50,7 +40,7 @@ exitcode_t CommandLine::HandleCommandConvert(CommandLineArgEnumerator * enumerat
 
     utf8 sourcePath[MAX_PATH];
     Path::GetAbsolute(sourcePath, sizeof(sourcePath), rawSourcePath);
-    uint32 sourceFileType = get_file_extension_type(sourcePath);
+    uint32_t sourceFileType = get_file_extension_type(sourcePath);
 
     // Get the destination path
     const utf8 * rawDestinationPath;
@@ -62,7 +52,7 @@ exitcode_t CommandLine::HandleCommandConvert(CommandLineArgEnumerator * enumerat
 
     utf8 destinationPath[MAX_PATH];
     Path::GetAbsolute(destinationPath, sizeof(sourcePath), rawDestinationPath);
-    uint32 destinationFileType = get_file_extension_type(destinationPath);
+    uint32_t destinationFileType = get_file_extension_type(destinationPath);
 
     // Validate target type
     if (destinationFileType != FILE_EXTENSION_SC6 &&
@@ -108,13 +98,13 @@ exitcode_t CommandLine::HandleCommandConvert(CommandLineArgEnumerator * enumerat
 
     try
     {
-        auto importer = std::unique_ptr<IParkImporter>(ParkImporter::Create(sourcePath));
+        auto importer = ParkImporter::Create(sourcePath);
         importer->Load(sourcePath);
         importer->Import();
     }
-    catch (const Exception &ex)
+    catch (const std::exception &ex)
     {
-        Console::Error::WriteLine(ex.GetMessage());
+        Console::Error::WriteLine(ex.what());
         return EXITCODE_FAIL;
     }
 
@@ -143,9 +133,9 @@ exitcode_t CommandLine::HandleCommandConvert(CommandLineArgEnumerator * enumerat
             exporter->SaveGame(destinationPath);
         }
     }
-    catch (const Exception &ex)
+    catch (const std::exception &ex)
     {
-        Console::Error::WriteLine(ex.GetMessage());
+        Console::Error::WriteLine(ex.what());
         return EXITCODE_FAIL;
     }
 
@@ -153,7 +143,7 @@ exitcode_t CommandLine::HandleCommandConvert(CommandLineArgEnumerator * enumerat
     return EXITCODE_OK;
 }
 
-static void WriteConvertFromAndToMessage(uint32 sourceFileType, uint32 destinationFileType)
+static void WriteConvertFromAndToMessage(uint32_t sourceFileType, uint32_t destinationFileType)
 {
     const utf8 * sourceFileTypeName = GetFileTypeFriendlyName(sourceFileType);
     const utf8 * destinationFileTypeName = GetFileTypeFriendlyName(destinationFileType);
@@ -161,7 +151,7 @@ static void WriteConvertFromAndToMessage(uint32 sourceFileType, uint32 destinati
     Console::WriteLine();
 }
 
-static const utf8 * GetFileTypeFriendlyName(uint32 fileType)
+static const utf8 * GetFileTypeFriendlyName(uint32_t fileType)
 {
     switch (fileType) {
     case FILE_EXTENSION_SC4: return "RollerCoaster Tycoon 1 scenario";

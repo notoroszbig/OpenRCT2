@@ -1,25 +1,18 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
-#include "../../interface/viewport.h"
+#include "../../interface/Viewport.h"
 #include "../../paint/Paint.h"
 #include "../../paint/Supports.h"
-#include "../../world/sprite.h"
+#include "../../world/Sprite.h"
 #include "../Track.h"
-#include "../track_paint.h"
+#include "../TrackPaint.h"
 
 enum
 {
@@ -356,10 +349,15 @@ enum
     SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_SE_SW_SE_SEQ_3       = 20051,
 };
 
-static void dinghy_slide_track_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                    sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[2][4][2] = {
+    static constexpr const uint32_t imageIds[2][4][2] = {
         {
             { SPR_DINGHY_SLIDE_FLAT_SW_NE, SPR_DINGHY_SLIDE_FLAT_FRONT_SW_NE },
             { SPR_DINGHY_SLIDE_FLAT_NW_SE, SPR_DINGHY_SLIDE_FLAT_FRONT_NW_SE },
@@ -374,8 +372,8 @@ static void dinghy_slide_track_flat(paint_session * session, uint8 rideIndex, ui
         },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[isChained][direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[isChained][direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[isChained][direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -393,10 +391,15 @@ static void dinghy_slide_track_flat(paint_session * session, uint8 rideIndex, ui
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_station(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                       sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_station(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    [[maybe_unused]] uint8_t   trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_STATION_SW_NE, SPR_STATION_BASE_B_SW_NE },
         { SPR_DINGHY_SLIDE_STATION_NW_SE, SPR_STATION_BASE_B_NW_SE },
         { SPR_DINGHY_SLIDE_STATION_SW_NE, SPR_STATION_BASE_B_SW_NE },
@@ -413,7 +416,7 @@ static void dinghy_slide_track_station(paint_session * session, uint8 rideIndex,
     metal_a_supports_paint_setup(session, METAL_SUPPORTS_TUBES, 8 - (direction & 1), 0, height,
                                  session->TrackColours[SCHEME_SUPPORTS]);
 
-    track_paint_util_draw_station(session, rideIndex, trackSequence, direction, height, tileElement);
+    track_paint_util_draw_station(session, rideIndex, direction, height, tileElement);
 
     paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
 
@@ -421,10 +424,15 @@ static void dinghy_slide_track_station(paint_session * session, uint8 rideIndex,
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_25_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                         sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[2][4][2] = {
+    static constexpr const uint32_t imageIds[2][4][2] = {
         {
             { SPR_DINGHY_SLIDE_25_DEG_SW_NE, SPR_DINGHY_SLIDE_25_DEG_FRONT_SW_NE },
             { SPR_DINGHY_SLIDE_25_DEG_NW_SE, SPR_DINGHY_SLIDE_25_DEG_FRONT_NW_SE },
@@ -439,8 +447,8 @@ static void dinghy_slide_track_25_deg_up(paint_session * session, uint8 rideInde
         },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[isChained][direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[isChained][direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[isChained][direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -465,17 +473,22 @@ static void dinghy_slide_track_25_deg_up(paint_session * session, uint8 rideInde
     paint_util_set_general_support_height(session, height + 56, 0x20);
 }
 
-static void dinghy_slide_track_60_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                         sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_60_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_60_DEG_SW_NE, SPR_DINGHY_SLIDE_60_DEG_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_60_DEG_NW_SE, SPR_DINGHY_SLIDE_60_DEG_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_60_DEG_NE_SW, SPR_DINGHY_SLIDE_60_DEG_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_60_DEG_SE_NW, SPR_DINGHY_SLIDE_60_DEG_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -500,10 +513,15 @@ static void dinghy_slide_track_60_deg_up(paint_session * session, uint8 rideInde
     paint_util_set_general_support_height(session, height + 104, 0x20);
 }
 
-static void dinghy_slide_track_flat_to_25_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_flat_to_25_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[2][4][2] = {
+    static constexpr const uint32_t imageIds[2][4][2] = {
         {
             { SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_SW_NE, SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_FRONT_SW_NE },
             { SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_NW_SE, SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_FRONT_NW_SE },
@@ -518,8 +536,8 @@ static void dinghy_slide_track_flat_to_25_deg_up(paint_session * session, uint8 
         },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[isChained][direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[isChained][direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[isChained][direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -544,17 +562,22 @@ static void dinghy_slide_track_flat_to_25_deg_up(paint_session * session, uint8 
     paint_util_set_general_support_height(session, height + 48, 0x20);
 }
 
-static void dinghy_slide_track_25_deg_up_to_60_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                      uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_up_to_60_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_SW_NE, SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_NW_SE, SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_NE_SW, SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_SE_NW, SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -579,17 +602,22 @@ static void dinghy_slide_track_25_deg_up_to_60_deg_up(paint_session * session, u
     paint_util_set_general_support_height(session, height + 72, 0x20);
 }
 
-static void dinghy_slide_track_60_deg_up_to_25_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                      uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_60_deg_up_to_25_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_SW_NE, SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_NW_SE, SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_NE_SW, SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_SE_NW, SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -614,10 +642,15 @@ static void dinghy_slide_track_60_deg_up_to_25_deg_up(paint_session * session, u
     paint_util_set_general_support_height(session, height + 72, 0x20);
 }
 
-static void dinghy_slide_track_25_deg_up_to_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_up_to_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[2][4][2] = {
+    static constexpr const uint32_t imageIds[2][4][2] = {
         {
             { SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_SW_NE, SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_FRONT_SW_NE },
             { SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_NW_SE, SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_FRONT_NW_SE },
@@ -632,8 +665,8 @@ static void dinghy_slide_track_25_deg_up_to_flat(paint_session * session, uint8 
         },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[isChained][direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[isChained][direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[isChained][direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -658,40 +691,70 @@ static void dinghy_slide_track_25_deg_up_to_flat(paint_session * session, uint8 
     paint_util_set_general_support_height(session, height + 40, 0x20);
 }
 
-static void dinghy_slide_track_25_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                           sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_25_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_60_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                           sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_60_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_60_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_flat_to_25_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                   uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_flat_to_25_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_25_deg_up_to_flat(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_25_deg_down_to_60_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                          uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_down_to_60_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_60_deg_up_to_25_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_25_deg_down_to_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                   uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_down_to_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_flat_to_25_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_right_quarter_turn_5(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                    uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_right_quarter_turn_5(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const sprite_bb imageIds[4][5] = {
+    static constexpr const sprite_bb imageIds[4][5] = {
         {
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_SW_SE_PART_0, { 0, 2, 0 }, { 0, 6, 0 }, { 32, 20, 2 } },
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_SW_SE_PART_1, { 0, 16, 0 }, { 0, 16, 0 }, { 32, 16, 2 } },
@@ -721,7 +784,7 @@ static void dinghy_slide_track_right_quarter_turn_5(paint_session * session, uin
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_SE_NE_PART_4, { 0, 2, 0 }, { 0, 6, 0 }, { 32, 20, 2 } },
         }
     };
-    static const sprite_bb frontImageIds[4][5] = {
+    static constexpr const sprite_bb frontImageIds[4][5] = {
         {
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_FRONT_SW_SE_PART_0, { 0, 2, 0 }, { 0, 6, 27 }, { 32, 30, 0 } },
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_FRONT_SW_SE_PART_1, { 0, 16, 0 }, { 0, 16, 27 }, { 32, 16, 0 } },
@@ -752,10 +815,10 @@ static void dinghy_slide_track_right_quarter_turn_5(paint_session * session, uin
         }
     };
 
-    track_paint_util_right_quarter_turn_5_tiles_paint_2(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], imageIds);
-    track_paint_util_right_quarter_turn_5_tiles_paint_2(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], frontImageIds);
+    track_paint_util_right_quarter_turn_5_tiles_paint_2(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], imageIds);
+    track_paint_util_right_quarter_turn_5_tiles_paint_2(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], frontImageIds);
 
     switch (trackSequence)
     {
@@ -813,23 +876,38 @@ static void dinghy_slide_track_right_quarter_turn_5(paint_session * session, uin
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_left_quarter_turn_5(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                   uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_left_quarter_turn_5(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     trackSequence = mapLeftQuarterTurn5TilesToRightQuarterTurn5Tiles[trackSequence];
     dinghy_slide_track_right_quarter_turn_5(session, rideIndex, trackSequence, (direction + 1) % 4, height, tileElement);
 }
 
-static void dinghy_slide_track_60_deg_down_to_25_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                          uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_60_deg_down_to_25_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_25_deg_up_to_60_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_s_bend_left(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                           sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_s_bend_left(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][4][2] = {
+    static constexpr const uint32_t imageIds[4][4][2] = {
         { { SPR_DINGHY_SLIDE_S_BEND_SW_SE_SW_SEQ_3, SPR_DINGHY_SLIDE_S_BEND_FRONT_NE_NW_NE_SEQ_0 },
           { SPR_DINGHY_SLIDE_S_BEND_SW_SE_SW_SEQ_2, SPR_DINGHY_SLIDE_S_BEND_FRONT_NE_NW_NE_SEQ_1 },
           { SPR_DINGHY_SLIDE_S_BEND_SW_SE_SW_SEQ_1, SPR_DINGHY_SLIDE_S_BEND_FRONT_NE_NW_NE_SEQ_2 },
@@ -848,9 +926,9 @@ static void dinghy_slide_track_s_bend_left(paint_session * session, uint8 rideIn
           { SPR_DINGHY_SLIDE_S_BEND_NW_SW_NW_SEQ_0, SPR_DINGHY_SLIDE_S_BEND_FRONT_NW_SW_NW_SEQ_0 } },
     };
 
-    uint32 imageId      = imageIds[direction][trackSequence][0] | session->TrackColours[SCHEME_TRACK];
-    uint32 frontImageId = imageIds[direction][trackSequence][1] | session->TrackColours[SCHEME_TRACK];
-    sint16 bboy;
+    uint32_t imageId      = imageIds[direction][trackSequence][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t frontImageId = imageIds[direction][trackSequence][1] | session->TrackColours[SCHEME_TRACK];
+    int16_t bboy;
 
     switch (trackSequence)
     {
@@ -916,10 +994,15 @@ static void dinghy_slide_track_s_bend_left(paint_session * session, uint8 rideIn
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_s_bend_right(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                            sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_s_bend_right(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][4][2] = {
+    static constexpr const uint32_t imageIds[4][4][2] = {
         { { SPR_DINGHY_SLIDE_S_BEND_SW_NW_SW_SEQ_3, SPR_DINGHY_SLIDE_S_BEND_FRONT_NE_SE_NE_SEQ_0 },
           { SPR_DINGHY_SLIDE_S_BEND_SW_NW_SW_SEQ_2, SPR_DINGHY_SLIDE_S_BEND_FRONT_NE_SE_NE_SEQ_1 },
           { SPR_DINGHY_SLIDE_S_BEND_SW_NW_SW_SEQ_1, SPR_DINGHY_SLIDE_S_BEND_FRONT_NE_SE_NE_SEQ_2 },
@@ -938,9 +1021,9 @@ static void dinghy_slide_track_s_bend_right(paint_session * session, uint8 rideI
           { SPR_DINGHY_SLIDE_S_BEND_SE_SW_SE_SEQ_0, SPR_DINGHY_SLIDE_S_BEND_FRONT_SE_SW_SE_SEQ_0 } },
     };
 
-    uint32 imageId      = imageIds[direction][trackSequence][0] | session->TrackColours[SCHEME_TRACK];
-    uint32 frontImageId = imageIds[direction][trackSequence][1] | session->TrackColours[SCHEME_TRACK];
-    sint16 bboy;
+    uint32_t imageId      = imageIds[direction][trackSequence][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t frontImageId = imageIds[direction][trackSequence][1] | session->TrackColours[SCHEME_TRACK];
+    int16_t bboy;
 
     switch (trackSequence)
     {
@@ -1006,10 +1089,15 @@ static void dinghy_slide_track_s_bend_right(paint_session * session, uint8 rideI
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_right_quarter_turn_3(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                    uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_right_quarter_turn_3(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const sprite_bb imageIds[4][3] = {
+    static constexpr const sprite_bb imageIds[4][3] = {
         {
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_SW_SE_PART_0, { 0, 0, 0 }, { 0, 6, 0 }, { 32, 20, 2 } },
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_SW_SE_PART_1, { 0, 0, 0 }, { 16, 16, 0 }, { 16, 16, 2 } },
@@ -1031,7 +1119,7 @@ static void dinghy_slide_track_right_quarter_turn_3(paint_session * session, uin
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_SE_NE_PART_2, { 0, 0, 0 }, { 0, 6, 0 }, { 32, 20, 2 } },
         }
     };
-    static const sprite_bb frontImageIds[4][3] = {
+    static constexpr const sprite_bb frontImageIds[4][3] = {
         {
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_FRONT_SW_SE_PART_0, { 0, 0, 0 }, { 0, 6, 27 }, { 32, 20, 0 } },
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_FRONT_SW_SE_PART_1, { 0, 0, 0 }, { 16, 16, 27 }, { 16, 16, 0 } },
@@ -1054,10 +1142,10 @@ static void dinghy_slide_track_right_quarter_turn_3(paint_session * session, uin
         }
     };
 
-    track_paint_util_right_quarter_turn_3_tiles_paint_3(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], imageIds);
-    track_paint_util_right_quarter_turn_3_tiles_paint_3(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], frontImageIds);
+    track_paint_util_right_quarter_turn_3_tiles_paint_3(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], imageIds);
+    track_paint_util_right_quarter_turn_3_tiles_paint_3(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], frontImageIds);
     track_paint_util_right_quarter_turn_3_tiles_tunnel(session, height, direction, trackSequence, TUNNEL_0);
 
     switch (trackSequence)
@@ -1068,7 +1156,7 @@ static void dinghy_slide_track_right_quarter_turn_3(paint_session * session, uin
         break;
     }
 
-    sint32 blockedSegments = 0;
+    int32_t blockedSegments = 0;
     switch (trackSequence)
     {
     case 0:
@@ -1086,24 +1174,34 @@ static void dinghy_slide_track_right_quarter_turn_3(paint_session * session, uin
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_left_quarter_turn_3(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                   uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_left_quarter_turn_3(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     trackSequence = mapLeftQuarterTurn3TilesToRightQuarterTurn3Tiles[trackSequence];
     dinghy_slide_track_right_quarter_turn_3(session, rideIndex, trackSequence, (direction + 1) % 4, height, tileElement);
 }
 
-static void dinghy_slide_track_flat_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                            sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_flat_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_FLAT_COVERED_SW_NE, SPR_DINGHY_SLIDE_FLAT_COVERED_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_FLAT_COVERED_NW_SE, SPR_DINGHY_SLIDE_FLAT_COVERED_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_FLAT_COVERED_SW_NE, SPR_DINGHY_SLIDE_FLAT_COVERED_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_FLAT_COVERED_NW_SE, SPR_DINGHY_SLIDE_FLAT_COVERED_FRONT_NW_SE },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -1121,17 +1219,22 @@ static void dinghy_slide_track_flat_covered(paint_session * session, uint8 rideI
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_25_deg_up_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_up_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr  const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_25_DEG_COVERED_SW_NE, SPR_DINGHY_SLIDE_25_DEG_COVERED_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_25_DEG_COVERED_NW_SE, SPR_DINGHY_SLIDE_25_DEG_COVERED_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_25_DEG_COVERED_NE_SW, SPR_DINGHY_SLIDE_25_DEG_COVERED_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_25_DEG_COVERED_SE_NW, SPR_DINGHY_SLIDE_25_DEG_COVERED_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -1156,17 +1259,22 @@ static void dinghy_slide_track_25_deg_up_covered(paint_session * session, uint8 
     paint_util_set_general_support_height(session, height + 56, 0x20);
 }
 
-static void dinghy_slide_track_60_deg_up_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_60_deg_up_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_60_DEG_COVERED_SW_NE, SPR_DINGHY_SLIDE_60_DEG_COVERED_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_60_DEG_COVERED_NW_SE, SPR_DINGHY_SLIDE_60_DEG_COVERED_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_60_DEG_COVERED_NE_SW, SPR_DINGHY_SLIDE_60_DEG_COVERED_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_60_DEG_COVERED_SE_NW, SPR_DINGHY_SLIDE_60_DEG_COVERED_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -1191,17 +1299,22 @@ static void dinghy_slide_track_60_deg_up_covered(paint_session * session, uint8 
     paint_util_set_general_support_height(session, height + 104, 0x20);
 }
 
-static void dinghy_slide_track_flat_to_25_deg_up_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                         uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_flat_to_25_deg_up_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_COVERED_SW_NE, SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_COVERED_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_COVERED_NW_SE, SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_COVERED_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_COVERED_NE_SW, SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_COVERED_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_COVERED_SE_NW, SPR_DINGHY_SLIDE_FLAT_TO_25_DEG_COVERED_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -1226,17 +1339,22 @@ static void dinghy_slide_track_flat_to_25_deg_up_covered(paint_session * session
     paint_util_set_general_support_height(session, height + 48, 0x20);
 }
 
-static void dinghy_slide_track_25_deg_up_to_60_deg_up_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                              uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_up_to_60_deg_up_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_COVERED_SW_NE, SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_COVERED_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_COVERED_NW_SE, SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_COVERED_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_COVERED_NE_SW, SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_COVERED_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_COVERED_SE_NW, SPR_DINGHY_SLIDE_25_DEG_TO_60_DEG_COVERED_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -1261,17 +1379,22 @@ static void dinghy_slide_track_25_deg_up_to_60_deg_up_covered(paint_session * se
     paint_util_set_general_support_height(session, height + 72, 0x20);
 }
 
-static void dinghy_slide_track_60_deg_up_to_25_deg_up_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                              uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_60_deg_up_to_25_deg_up_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr  const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_COVERED_SW_NE, SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_COVERED_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_COVERED_NW_SE, SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_COVERED_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_COVERED_NE_SW, SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_COVERED_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_COVERED_SE_NW, SPR_DINGHY_SLIDE_60_DEG_TO_25_DEG_COVERED_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -1296,17 +1419,22 @@ static void dinghy_slide_track_60_deg_up_to_25_deg_up_covered(paint_session * se
     paint_util_set_general_support_height(session, height + 72, 0x20);
 }
 
-static void dinghy_slide_track_25_deg_up_to_flat_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                         uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_up_to_flat_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_COVERED_SW_NE, SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_COVERED_FRONT_SW_NE },
         { SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_COVERED_NW_SE, SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_COVERED_FRONT_NW_SE },
         { SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_COVERED_NE_SW, SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_COVERED_FRONT_NE_SW },
         { SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_COVERED_SE_NW, SPR_DINGHY_SLIDE_25_DEG_TO_FLAT_COVERED_FRONT_SE_NW },
     };
 
-    uint32 imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction][0] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 2, height, 0, 6, height);
 
     imageId = imageIds[direction][1] | session->TrackColours[SCHEME_TRACK];
@@ -1331,41 +1459,71 @@ static void dinghy_slide_track_25_deg_up_to_flat_covered(paint_session * session
     paint_util_set_general_support_height(session, height + 40, 0x20);
 }
 
-static void dinghy_slide_track_25_deg_down_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                   uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_down_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_25_deg_up_covered(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_60_deg_down_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                   uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_60_deg_down_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_60_deg_up_covered(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_flat_to_25_deg_down_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                           uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_flat_to_25_deg_down_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_25_deg_up_to_flat_covered(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_25_deg_down_to_60_deg_down_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                                  uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_down_to_60_deg_down_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_60_deg_up_to_25_deg_up_covered(session, rideIndex, trackSequence, (direction + 2) & 3, height,
                                                       tileElement);
 }
 
-static void dinghy_slide_track_25_deg_down_to_flat_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                           uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_25_deg_down_to_flat_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_flat_to_25_deg_up_covered(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void dinghy_slide_track_right_quarter_turn_5_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                            uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_right_quarter_turn_5_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const sprite_bb imageIds[4][5] = {
+    static constexpr const sprite_bb imageIds[4][5] = {
         {
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_COVERED_SW_SE_PART_0, { 0, 0, 0 }, { 0, 6, 0 }, { 32, 20, 2 } },
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_COVERED_SW_SE_PART_1, { 0, 0, 0 }, { 0, 16, 0 }, { 32, 16, 2 } },
@@ -1395,7 +1553,7 @@ static void dinghy_slide_track_right_quarter_turn_5_covered(paint_session * sess
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_COVERED_SE_NE_PART_4, { 0, 0, 0 }, { 0, 6, 0 }, { 32, 20, 2 } },
         }
     };
-    static const sprite_bb frontImageIds[4][5] = {
+    static constexpr const sprite_bb frontImageIds[4][5] = {
         {
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_COVERED_FRONT_SW_SE_PART_0, { 0, 0, 0 }, { 0, 6, 27 }, { 32, 30, 0 } },
             { SPR_DINGHY_SLIDE_QUARTER_TURN_5_COVERED_FRONT_SW_SE_PART_1, { 0, 0, 0 }, { 0, 16, 27 }, { 32, 16, 0 } },
@@ -1426,10 +1584,10 @@ static void dinghy_slide_track_right_quarter_turn_5_covered(paint_session * sess
         }
     };
 
-    track_paint_util_right_quarter_turn_5_tiles_paint_2(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], imageIds);
-    track_paint_util_right_quarter_turn_5_tiles_paint_2(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], frontImageIds);
+    track_paint_util_right_quarter_turn_5_tiles_paint_2(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], imageIds);
+    track_paint_util_right_quarter_turn_5_tiles_paint_2(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], frontImageIds);
 
     switch (trackSequence)
     {
@@ -1487,17 +1645,27 @@ static void dinghy_slide_track_right_quarter_turn_5_covered(paint_session * sess
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_left_quarter_turn_5_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                           uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_left_quarter_turn_5_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     trackSequence = mapLeftQuarterTurn5TilesToRightQuarterTurn5Tiles[trackSequence];
     dinghy_slide_track_right_quarter_turn_5_covered(session, rideIndex, trackSequence, (direction + 1) % 4, height, tileElement);
 }
 
-static void dinghy_slide_track_s_bend_left_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                   uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_s_bend_left_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][4][2] = {
+    static constexpr  const uint32_t imageIds[4][4][2] = {
         { { SPR_DINGHY_SLIDE_S_BEND_COVERED_SW_SE_SW_SEQ_3, SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_NE_NW_NE_SEQ_0 },
           { SPR_DINGHY_SLIDE_S_BEND_COVERED_SW_SE_SW_SEQ_2, SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_NE_NW_NE_SEQ_1 },
           { SPR_DINGHY_SLIDE_S_BEND_COVERED_SW_SE_SW_SEQ_1, SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_NE_NW_NE_SEQ_2 },
@@ -1516,9 +1684,9 @@ static void dinghy_slide_track_s_bend_left_covered(paint_session * session, uint
           { SPR_DINGHY_SLIDE_S_BEND_COVERED_NW_SW_NW_SEQ_0, SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_NW_SW_NW_SEQ_0 } },
     };
 
-    uint32 imageId      = imageIds[direction][trackSequence][0] | session->TrackColours[SCHEME_TRACK];
-    uint32 frontImageId = imageIds[direction][trackSequence][1] | session->TrackColours[SCHEME_TRACK];
-    sint16 bboy;
+    uint32_t imageId      = imageIds[direction][trackSequence][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t frontImageId = imageIds[direction][trackSequence][1] | session->TrackColours[SCHEME_TRACK];
+    int16_t bboy;
 
     switch (trackSequence)
     {
@@ -1584,10 +1752,15 @@ static void dinghy_slide_track_s_bend_left_covered(paint_session * session, uint
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_s_bend_right_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                    uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_s_bend_right_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][4][2] = {
+    static constexpr const uint32_t imageIds[4][4][2] = {
         { { SPR_DINGHY_SLIDE_S_BEND_COVERED_SW_NW_SW_SEQ_3, SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_NE_SE_NE_SEQ_0 },
           { SPR_DINGHY_SLIDE_S_BEND_COVERED_SW_NW_SW_SEQ_2, SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_NE_SE_NE_SEQ_1 },
           { SPR_DINGHY_SLIDE_S_BEND_COVERED_SW_NW_SW_SEQ_1, SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_NE_SE_NE_SEQ_2 },
@@ -1606,9 +1779,9 @@ static void dinghy_slide_track_s_bend_right_covered(paint_session * session, uin
           { SPR_DINGHY_SLIDE_S_BEND_COVERED_SE_SW_SE_SEQ_0, SPR_DINGHY_SLIDE_S_BEND_COVERED_FRONT_SE_SW_SE_SEQ_0 } },
     };
 
-    uint32 imageId      = imageIds[direction][trackSequence][0] | session->TrackColours[SCHEME_TRACK];
-    uint32 frontImageId = imageIds[direction][trackSequence][1] | session->TrackColours[SCHEME_TRACK];
-    sint16 bboy;
+    uint32_t imageId      = imageIds[direction][trackSequence][0] | session->TrackColours[SCHEME_TRACK];
+    uint32_t frontImageId = imageIds[direction][trackSequence][1] | session->TrackColours[SCHEME_TRACK];
+    int16_t bboy;
 
     switch (trackSequence)
     {
@@ -1674,10 +1847,15 @@ static void dinghy_slide_track_s_bend_right_covered(paint_session * session, uin
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_right_quarter_turn_3_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                            uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_right_quarter_turn_3_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const sprite_bb imageIds[4][3] = {
+    static constexpr const sprite_bb imageIds[4][3] = {
         {
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_COVERED_SW_SE_PART_0, { 0, 0, 0 }, { 0, 6, 0 }, { 32, 20, 2 } },
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_COVERED_SW_SE_PART_1, { 0, 0, 0 }, { 16, 16, 0 }, { 16, 16, 2 } },
@@ -1699,7 +1877,7 @@ static void dinghy_slide_track_right_quarter_turn_3_covered(paint_session * sess
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_COVERED_SE_NE_PART_2, { 0, 0, 0 }, { 0, 6, 0 }, { 32, 20, 2 } },
         }
     };
-    static const sprite_bb frontImageIds[4][3] = {
+    static constexpr const sprite_bb frontImageIds[4][3] = {
         {
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_COVERED_FRONT_SW_SE_PART_0, { 0, 0, 0 }, { 0, 6, 27 }, { 32, 20, 0 } },
             { SPR_DINGHY_SLIDE_QUARTER_TURN_3_COVERED_FRONT_SW_SE_PART_1, { 0, 0, 0 }, { 16, 16, 27 }, { 16, 16, 0 } },
@@ -1722,10 +1900,10 @@ static void dinghy_slide_track_right_quarter_turn_3_covered(paint_session * sess
         }
     };
 
-    track_paint_util_right_quarter_turn_3_tiles_paint_3(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], imageIds);
-    track_paint_util_right_quarter_turn_3_tiles_paint_3(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], frontImageIds);
+    track_paint_util_right_quarter_turn_3_tiles_paint_3(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], imageIds);
+    track_paint_util_right_quarter_turn_3_tiles_paint_3(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], frontImageIds);
     track_paint_util_right_quarter_turn_3_tiles_tunnel(session, height, direction, trackSequence, TUNNEL_0);
 
     switch (trackSequence)
@@ -1736,7 +1914,7 @@ static void dinghy_slide_track_right_quarter_turn_3_covered(paint_session * sess
         break;
     }
 
-    sint32 blockedSegments = 0;
+    int32_t blockedSegments = 0;
     switch (trackSequence)
     {
     case 0:
@@ -1754,21 +1932,31 @@ static void dinghy_slide_track_right_quarter_turn_3_covered(paint_session * sess
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void dinghy_slide_track_left_quarter_turn_3_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                           uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_left_quarter_turn_3_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     trackSequence = mapLeftQuarterTurn3TilesToRightQuarterTurn3Tiles[trackSequence];
     dinghy_slide_track_right_quarter_turn_3_covered(session, rideIndex, trackSequence, (direction + 1) % 4, height, tileElement);
 }
 
-static void dinghy_slide_track_60_deg_down_to_25_deg_down_covered(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                                  uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void dinghy_slide_track_60_deg_down_to_25_deg_down_covered(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     dinghy_slide_track_25_deg_up_to_60_deg_up_covered(session, rideIndex, trackSequence, (direction + 2) & 3, height,
                                                       tileElement);
 }
 
-TRACK_PAINT_FUNCTION get_track_paint_function_dinghy_slide(sint32 trackType, sint32 direction)
+TRACK_PAINT_FUNCTION get_track_paint_function_dinghy_slide(int32_t trackType, int32_t direction)
 {
     switch (trackType)
     {
@@ -1854,5 +2042,5 @@ TRACK_PAINT_FUNCTION get_track_paint_function_dinghy_slide(sint32 trackType, sin
         return dinghy_slide_track_right_quarter_turn_3_covered;
     }
 
-    return NULL;
+    return nullptr;
 }

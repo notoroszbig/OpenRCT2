@@ -1,24 +1,17 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include "../../common.h"
-#include "../../interface/viewport.h"
+#include "../../interface/Viewport.h"
 #include "../../paint/Paint.h"
 #include "../Track.h"
-#include "../track_paint.h"
+#include "../TrackPaint.h"
 
 enum
 {
@@ -37,26 +30,31 @@ enum
 };
 
 /** rct2: 0x008B0E40 */
-static void paint_boat_hire_track_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                       sint32 height, rct_tile_element * tileElement)
+static void paint_boat_hire_track_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    uint32 imageId;
+    uint32_t imageId;
 
     if (direction & 1)
     {
         imageId = SPR_BOAT_HIRE_FLAT_BACK_NW_SE | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 1, 32, 3, height, 4, 0, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 1, 32, 3, height, 4, 0, height);
 
         imageId = SPR_BOAT_HIRE_FLAT_FRONT_NW_SE | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 1, 32, 3, height, 28, 0, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 1, 32, 3, height, 28, 0, height);
     }
     else
     {
         imageId = SPR_BOAT_HIRE_FLAT_BACK_SW_NE | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 32, 1, 3, height, 0, 4, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 32, 1, 3, height, 0, 4, height);
 
         imageId = SPR_BOAT_HIRE_FLAT_FRONT_SW_NE | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 32, 1, 3, height, 0, 28, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 32, 1, 3, height, 0, 28, height);
     }
 
     paint_util_set_segment_support_height(session, paint_util_rotate_segments(SEGMENT_D0 | SEGMENT_C4 | SEGMENT_CC, direction),
@@ -65,8 +63,13 @@ static void paint_boat_hire_track_flat(paint_session * session, uint8 rideIndex,
 }
 
 /** rct2: 0x008B0E50 */
-static void paint_boat_hire_station(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                    sint32 height, rct_tile_element * tileElement)
+static void paint_boat_hire_station(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     LocationXY16                             position      = session->MapPosition;
     Ride *                               ride          = get_ride(rideIndex);
@@ -75,14 +78,14 @@ static void paint_boat_hire_station(paint_session * session, uint8 rideIndex, ui
     if (direction & 1)
     {
         paint_util_push_tunnel_right(session, height, TUNNEL_6);
-        track_paint_util_draw_pier(session, ride, entranceStyle, position, direction, height, tileElement,
-                                   get_current_rotation());
+        track_paint_util_draw_pier(
+            session, ride, entranceStyle, position, direction, height, tileElement, session->CurrentRotation);
     }
     else
     {
         paint_util_push_tunnel_left(session, height, TUNNEL_6);
-        track_paint_util_draw_pier(session, ride, entranceStyle, position, direction, height, tileElement,
-                                   get_current_rotation());
+        track_paint_util_draw_pier(
+            session, ride, entranceStyle, position, direction, height, tileElement, session->CurrentRotation);
     }
 
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
@@ -90,39 +93,44 @@ static void paint_boat_hire_station(paint_session * session, uint8 rideIndex, ui
 }
 
 /** rct2: 0x008B0E80 */
-static void paint_boat_hire_track_left_quarter_turn_1_tile(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                           uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void paint_boat_hire_track_left_quarter_turn_1_tile(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    uint32 imageId;
+    uint32_t imageId;
     switch (direction)
     {
     case 0:
         imageId = SPR_BOAT_HIRE_FLAT_QUARTER_TURN_1_TILE_BACK_SW_NW | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 32, 32, 0, height, 0, 0, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 32, 32, 0, height, 0, 0, height);
 
         imageId = SPR_BOAT_HIRE_FLAT_QUARTER_TURN_1_TILE_FRONT_SW_NW | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 3, 3, 3, height, 28, 28, height + 2, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 3, 3, 3, height, 28, 28, height + 2);
         break;
     case 1:
         imageId = SPR_BOAT_HIRE_FLAT_QUARTER_TURN_1_TILE_BACK_NW_NE | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 32, 32, 0, height, 0, 0, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 32, 32, 0, height, 0, 0, height);
 
         imageId = SPR_BOAT_HIRE_FLAT_QUARTER_TURN_1_TILE_FRONT_NW_NE | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 3, 3, 3, height, 28, 28, height + 2, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 3, 3, 3, height, 28, 28, height + 2);
         break;
     case 2:
         imageId = SPR_BOAT_HIRE_FLAT_QUARTER_TURN_1_TILE_BACK_NE_SE | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 32, 32, 0, height, 0, 0, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 32, 32, 0, height, 0, 0, height);
 
         imageId = SPR_BOAT_HIRE_FLAT_QUARTER_TURN_1_TILE_FRONT_NE_SE | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 3, 3, 3, height, 28, 28, height + 2, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 3, 3, 3, height, 28, 28, height + 2);
         break;
     case 3:
         imageId = SPR_BOAT_HIRE_FLAT_QUARTER_TURN_1_TILE_FRONT_SE_SW | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 3, 3, 3, height, 28, 28, height + 2, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 3, 3, 3, height, 28, 28, height + 2);
 
         imageId = SPR_BOAT_HIRE_FLAT_QUARTER_TURN_1_TILE_BACK_SE_SW | session->TrackColours[SCHEME_TRACK];
-        sub_98197C(session, imageId, 0, 0, 32, 32, 0, height, 0, 0, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 32, 32, 0, height, 0, 0, height);
         break;
     }
 
@@ -132,8 +140,13 @@ static void paint_boat_hire_track_left_quarter_turn_1_tile(paint_session * sessi
 }
 
 /** rct2: 0x008B0E90 */
-static void paint_boat_hire_track_right_quarter_turn_1_tile(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                            uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void paint_boat_hire_track_right_quarter_turn_1_tile(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     paint_boat_hire_track_left_quarter_turn_1_tile(session, rideIndex, trackSequence, (direction + 3) % 4, height, tileElement);
 }
@@ -141,7 +154,7 @@ static void paint_boat_hire_track_right_quarter_turn_1_tile(paint_session * sess
 /**
  * rct2: 0x008B0D60
  */
-TRACK_PAINT_FUNCTION get_track_paint_function_boat_hire(sint32 trackType, sint32 direction)
+TRACK_PAINT_FUNCTION get_track_paint_function_boat_hire(int32_t trackType, int32_t direction)
 {
     switch (trackType)
     {
@@ -159,5 +172,5 @@ TRACK_PAINT_FUNCTION get_track_paint_function_boat_hire(sint32 trackType, sint32
         return paint_boat_hire_track_right_quarter_turn_1_tile;
     }
 
-    return NULL;
+    return nullptr;
 }

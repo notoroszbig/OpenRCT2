@@ -1220,8 +1220,8 @@ STR_1214    :{SMALLFONT}{BLACK}Välj högsta väntetid innan avgång
 STR_1215    :{WINDOW_COLOUR_2}Synkronisera med närliggande stationer
 STR_1216    :{SMALLFONT}{BLACK}Välj om avgången ska synkroniseras med alla närliggande stationer (för 'rally')
 STR_1217    :{COMMA16} sekunder
-STR_1218    :{BLACK}{SMALLUP}
-STR_1219    :{BLACK}{SMALLDOWN}
+STR_1218    :{BLACK}+
+STR_1219    :{BLACK}-
 STR_1220    :Endast utgång
 STR_1221    :Ingen ingång
 STR_1222    :Ingen utgång
@@ -1779,8 +1779,8 @@ STR_1773    :Bara en fotosektion tillåten per åktur
 STR_1774    :Bara en uppskjutskulle tillåten per åktur
 STR_1775    :Av
 STR_1776    :På
-STR_1777    :{WINDOW_COLOUR_2}Åkturs-musik
-STR_1778    :{STRINGID} - - 
+STR_1777    :<removed string - do not use>
+STR_1778    :<removed string - do not use>
 STR_1779    :{INLINE_SPRITE}{254}{19}{00}{00} Pandadräkt
 STR_1780    :{INLINE_SPRITE}{255}{19}{00}{00} Tigerdräkt
 STR_1781    :{INLINE_SPRITE}{00}{20}{00}{00} Elefantdräkt
@@ -3966,7 +3966,7 @@ STR_5626    :Andra parker
 STR_5627    :Sortera scenarion via:
 STR_5628    :Spelpaket
 STR_5629    :Svårighetsgrad
-STR_5630    :Tillåt upplåsning av scenarion
+STR_5630    :Tillåt progressiv-upplåsning
 STR_5631    :Original DLC parker
 STR_5632    :Bygg din egna...
 STR_5633    :CMD + 
@@ -4148,7 +4148,7 @@ STR_5839    :{SMALLFONT}{BLACK}Visa en knapp för 'forskning & utveckling'-föns
 STR_5840    :{SMALLFONT}{BLACK}Visa en knapp för 'fusk' i verktygsfältet
 STR_5841    :{SMALLFONT}{BLACK}Visa en knapp för 'senaste nyheterna'-fönstret i verktygsfältet
 STR_5842    :{SMALLFONT}{BLACK}Sortera scenarion via svårighetsgrad (Som i RCT2) eller som det kommer från början (Som i RCT1)
-STR_5843    :{SMALLFONT}{BLACK}Tillåt upplåsning av scenarion (Som i RCT1 & RCT3)
+STR_5843    :{SMALLFONT}{BLACK}Tillåter upplåsning av scenarion när du slutför dem (som i RCT1 & RCT3)
 STR_5844    :{SMALLFONT}{BLACK}Behåll anslutningen på servrar i flerspelarläget{NEWLINE}även om du hamnar i osynk eller fel uppstår
 STR_5845    :{SMALLFONT}{BLACK}Lägger till en knapp för{NEWLINE}'verktyg för felsökning' i verktygsraden.{NEWLINE}Aktiverar snabbknapp för utvecklarkonsolen
 STR_5846    :{SMALLFONT}{BLACK}Välj hur ofta OpenRCT2 ska spara automatiskt
@@ -4451,7 +4451,7 @@ STR_6142    :{WINDOW_COLOUR_2}Namn: {BLACK}{STRING}
 STR_6143    :{WINDOW_COLOUR_2}Typ: {BLACK}{STRINGID}
 STR_6144    :Visa visuella-uppdateringar
 STR_6145    :{SMALLFONT}{BLACK}Sätt hastighetsgräns för boosters
-STR_6146    :Aktivera alla ritbara spår på berg- och dalbanor
+STR_6146    :Aktivera alla ritbara spår
 STR_6147    :{SMALLFONT}{BLACK}Aktiverar alla spår attraktionstypen är tillgänglig att visa i konstruktionsfönstret, oavsett om fordonet har en ritbar version av spåret.
 STR_6148    :Ansluter till huvudservern...
 STR_6149    :Det gick inte ansluta till huvudservern
@@ -4469,11 +4469,59 @@ STR_6160    :{WINDOW_COLOUR_2}Tillgängliga fordon: {BLACK}{STRING}
 STR_6161    :Växla rutmönster på terräng
 STR_6162    :Snurrande vilda musen
 STR_6163    :Musformade vagnar susar förbi snäva kurvor och korta stup medan vagnen försiktigt snurrar för att desorientera passagerarna
-STR_6162    :Snurrande vilda musen
-STR_6163    :Musformade vagnar susar förbi snäva kurvor och korta stup medan vagnen försiktigt snurrar för att desorientera passagerarna
 STR_6164    :{WHITE}{CROSS}
 STR_6165    :Använd Vertical Sync (V-sync)
 STR_6166    :{SMALLFONT}{BLACK}Synkroniserar varje bild som ritas med skärmens "refresh rate", vilket förhindrar "Screen tearing".
+STR_6167    :{SMALLFONT}{BLACK}Avancerat
+STR_6168    :Titelsekvens
+STR_6169    :Scenarioväljaren
+STR_6170    :Anpassa
+STR_6171    :Sök
+STR_6172    :{SMALLFONT}{BLACK}Sök
+STR_6173    :Vänligen skriv in ett namn att söka:
+STR_6174    :Ladda sparfil
+STR_6175    :Ladda scenario
+STR_6176    :Scenario att ladda:
+STR_6177    :Load{MOVE_X}{87}Inget scenario valt
+STR_6178    :Load{MOVE_X}{87}{RED}Saknar scenario
+STR_6179    :Välj
+STR_6180    :Inget scenario valt
+STR_6181    :{RED}Saknar scenario
+STR_6182    :Följ{MOVE_X}{87}{STRING}
+STR_6183    :Följ{MOVE_X}{87}Inget objekt valt
+STR_6184    :Följ objekt
+STR_6185    :Välj objekt
+STR_6186    :Inget objekt valt
+STR_6187    :{MEDIUMFONT}{OUTLINE}{WINDOW_COLOUR_2}{STRING}
+STR_6188    :Spya
+STR_6189    :Anka
+STR_6190    :{SMALLFONT}{BLACK}Du kan inte välja ett objekt medan titelsekvensen spelas.
+STR_6191    :Mark
+STR_6192    :Vägg
+STR_6193    :{COMMA16} gäst
+STR_6194    :{INLINE_SPRITE}{11}{20}{00}{00}{COMMA16} gäst
+STR_6195    :{INLINE_SPRITE}{10}{20}{00}{00}{COMMA16} gäst
+STR_6196    :{BLACK}År:
+STR_6197    :{BLACK}Månad:
+STR_6198    :{BLACK}Dag:
+STR_6199    :Välj datum
+STR_6200    :Återställ datum
+STR_6201    :{MONTH}
+STR_6202    :Aktivera virtuella golv
+STR_6203    :{SMALLFONT}{BLACK}När aktiverad, kommer ett rutnät att ritas i samma höjd som elementen är på när du håller in Ctrl eller Shift vilket förenklar vertikala placeringar.
+
+STR_6215    :Konstruktion
+STR_6216    :Manövrering
+STR_6217    :Åktur-/spårtillgänglighet
+STR_6218    :Officiella OpenRCT2
+STR_6219    :Visa problem på gångvägar
+
+STR_6229    :{WINDOW_COLOUR_2}{STRINGID}: {STRINGID}
+STR_6230    :{STRINGID}:
+STR_6231    :{WINDOW_COLOUR_2}{STRINGID}: {MOVE_X}{185}{STRINGID}
+
+
+
 
 #############
 # Scenarion #
@@ -4916,26 +4964,6 @@ STR_DTLS    :
 STR_SCNR    :Fort Anachronism
 STR_PARK    :Fort Anachronism
 STR_DTLS    :
-
-#####################
-# Rides/attractions #
-#####################
-
-#WW
-[CONDORRD]
-STR_NAME    :Kondorhjulet
-STR_DESC    :Åkandes i speciella byglar under spåret känner passagerarna känslan av flygning när de sveper genom luften i kondorformade vagnar
-STR_CPTY    :4 passagerare per vagn
-
-##############
-# RCT Object #
-##############
-
-[SCGWWEST]
-STR_NAME    :Vilda västern-tema
-
-[SCGGIANT]
-STR_NAME    :Jätte trädgårds-tema
 
 #Maintainer: Nubbie
 #Everyone is allowed to edit this document

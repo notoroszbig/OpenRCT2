@@ -1,26 +1,21 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include "../config/Config.h"
 #include "../core/Util.hpp"
 #include "../Game.h"
-#include "../interface/window.h"
-#include "../localisation/localisation.h"
-#include "../ride/ride.h"
-#include "../ride/ride_data.h"
+#include "../interface/Window.h"
+#include "../localisation/Localisation.h"
+#include "../ride/Ride.h"
+#include "../ride/RideData.h"
+#include "../ride/ShopItem.h"
+#include "../world/Park.h"
 #include "../Cheats.h"
 #include "Finance.h"
 #include "Marketing.h"
@@ -36,14 +31,14 @@ const money16 AdvertisingCampaignPricePerWeek[] =
     MONEY(200, 00)   // RIDE
 };
 
-static const sint32 AdvertisingCampaignGuestGenerationProbabilities[] = {400, 300, 200, 200, 250, 200};
+static constexpr const int32_t AdvertisingCampaignGuestGenerationProbabilities[] = {400, 300, 200, 200, 250, 200};
 
-uint8 gMarketingCampaignDaysLeft[20];
-uint8 gMarketingCampaignRideIndex[22];
+uint8_t gMarketingCampaignDaysLeft[20];
+uint8_t gMarketingCampaignRideIndex[22];
 
-sint32 marketing_get_campaign_guest_generation_probability(sint32 campaign)
+int32_t marketing_get_campaign_guest_generation_probability(int32_t campaign)
 {
-    sint32 probability = AdvertisingCampaignGuestGenerationProbabilities[campaign];
+    int32_t probability = AdvertisingCampaignGuestGenerationProbabilities[campaign];
     Ride   * ride;
 
     // Lower probability of guest generation if price was already low
@@ -73,12 +68,12 @@ sint32 marketing_get_campaign_guest_generation_probability(sint32 campaign)
  */
 void marketing_update()
 {
-    for (sint32 campaign = 0; campaign < ADVERTISING_CAMPAIGN_COUNT; campaign++)
+    for (int32_t campaign = 0; campaign < ADVERTISING_CAMPAIGN_COUNT; campaign++)
     {
         if (gCheatsNeverendingMarketing)
             continue;
 
-        sint32 active = (gMarketingCampaignDaysLeft[campaign] & CAMPAIGN_ACTIVE_FLAG) != 0;
+        int32_t active = (gMarketingCampaignDaysLeft[campaign] & CAMPAIGN_ACTIVE_FLAG) != 0;
         if (gMarketingCampaignDaysLeft[campaign] == 0)
             continue;
 
@@ -93,14 +88,14 @@ void marketing_update()
         if (--gMarketingCampaignDaysLeft[campaign] != 0)
             continue;
 
-        sint32 campaignItem = gMarketingCampaignRideIndex[campaign];
+        int32_t campaignItem = gMarketingCampaignRideIndex[campaign];
 
         // This sets the string parameters for the marketing types that have an argument.
         if (campaign == ADVERTISING_CAMPAIGN_RIDE_FREE || campaign == ADVERTISING_CAMPAIGN_RIDE)
         {
             Ride * ride = get_ride(campaignItem);
             set_format_arg(0, rct_string_id, ride->name);
-            set_format_arg(2, uint32, ride->name_arguments);
+            set_format_arg(2, uint32_t, ride->name_arguments);
         }
         else if (campaign == ADVERTISING_CAMPAIGN_FOOD_OR_DRINK_FREE)
         {
@@ -114,7 +109,7 @@ void marketing_update()
     }
 }
 
-void marketing_set_guest_campaign(rct_peep * peep, sint32 campaign)
+void marketing_set_guest_campaign(rct_peep * peep, int32_t campaign)
 {
     switch (campaign)
     {
@@ -147,60 +142,9 @@ void marketing_set_guest_campaign(rct_peep * peep, sint32 campaign)
     }
 }
 
-void game_command_callback_marketing_start_campaign(sint32 eax, sint32 ebx, sint32 ecx, sint32 edx, sint32 esi, sint32 edi, sint32 ebp)
+bool marketing_is_campaign_type_applicable(int32_t campaignType)
 {
-    if (ebx != MONEY32_UNDEFINED)
-    {
-        window_close_by_class(WC_NEW_CAMPAIGN);
-    }
-}
-
-void marketing_start_campaign(sint32 type, sint32 rideOrItem, sint32 numWeeks)
-{
-    gGameCommandErrorTitle = STR_CANT_START_MARKETING_CAMPAIGN;
-    game_command_callback  = game_command_callback_marketing_start_campaign;
-    game_do_command(0, (numWeeks << 8) | GAME_COMMAND_FLAG_APPLY, 0, (rideOrItem << 8) | type, GAME_COMMAND_START_MARKETING_CAMPAIGN, 0, 0);
-}
-
-/**
- *
- *  rct2: 0x0069E73C
- */
-void game_command_start_campaign(sint32 * eax, sint32 * ebx, sint32 * ecx, sint32 * edx, sint32 * esi, sint32 * edi, sint32 * ebp)
-{
-    uint8 type       = *edx & 0xFF;
-    sint32 rideOrItem = (*edx >> 8) & 0xFF;
-    sint32 numWeeks   = (*ebx >> 8) & 0xFF;
-
-    if (type >= Util::CountOf(AdvertisingCampaignPricePerWeek))
-    {
-        log_warning("Invalid game command, type = %d", type);
-        *ebx = MONEY32_UNDEFINED;
-        return;
-    }
-
-    gCommandExpenditureType = RCT_EXPENDITURE_TYPE_MARKETING;
-    if (gParkFlags & PARK_FLAGS_FORBID_MARKETING_CAMPAIGN)
-    {
-        gGameCommandErrorText = STR_MARKETING_CAMPAIGNS_FORBIDDEN_BY_LOCAL_AUTHORITY;
-        *ebx = MONEY32_UNDEFINED;
-        return;
-    }
-
-    if (*ebx & GAME_COMMAND_FLAG_APPLY)
-    {
-        gMarketingCampaignDaysLeft[type]  = numWeeks | CAMPAIGN_ACTIVE_FLAG;
-        gMarketingCampaignRideIndex[type] = rideOrItem;
-
-        window_invalidate_by_class(WC_FINANCES);
-    }
-
-    *ebx = numWeeks * AdvertisingCampaignPricePerWeek[type];
-}
-
-bool marketing_is_campaign_type_applicable(sint32 campaignType)
-{
-    sint32         i;
+    int32_t         i;
     Ride           * ride;
     rct_ride_entry * rideEntry;
 

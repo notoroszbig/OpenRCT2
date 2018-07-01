@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include "Printer.hpp"
 #include "String.hpp"
@@ -35,7 +28,7 @@ namespace Printer {
         "paint_util_set_segment_support_height",
     };
 
-    static std::string GetImageIdString(uint32 imageId);
+    static std::string GetImageIdString(uint32_t imageId);
 
     static std::string GetOffsetExpressionString(int offset);
 
@@ -43,7 +36,7 @@ namespace Printer {
 
     static std::string PrintSideTunnelEdge(TunnelCall edge);
 
-    std::string PrintFunctionCalls(std::vector<function_call> calls, uint16 baseHeight) {
+    std::string PrintFunctionCalls(std::vector<function_call> calls, uint16_t baseHeight) {
         std::string out;
 
         for (auto &&call : calls) {
@@ -54,7 +47,7 @@ namespace Printer {
         return out;
     }
 
-    std::string PrintFunctionCall(function_call call, uint16 baseHeight) {
+    std::string PrintFunctionCall(function_call call, uint16_t baseHeight) {
         std::string imageId = GetImageIdString(call.supports.colour_flags);
         assert(call.function < Util::CountOf(functionNames));
         const char *functionName = functionNames[call.function];
@@ -246,12 +239,12 @@ namespace Printer {
         return s;
     }
 
-    static std::string GetImageIdString(uint32 imageId)
+    static std::string GetImageIdString(uint32_t imageId)
     {
         std::string result;
 
-        uint32 image = imageId & 0x7FFFF;
-        uint32 palette = imageId & ~0x7FFFF;
+        uint32_t image = imageId & 0x7FFFF;
+        uint32_t palette = imageId & ~0x7FFFF;
 
         std::string paletteName;
         if (palette == TestPaint::DEFAULT_SCHEME_TRACK) paletteName = "SCHEME_TRACK";
@@ -273,7 +266,7 @@ namespace Printer {
         return result;
     }
 
-    std::string PrintHeightOffset(uint16 height, uint16 baseHeight) {
+    std::string PrintHeightOffset(uint16_t height, uint16_t baseHeight) {
         int offset = height - baseHeight;
 
         return String::Format("height%s", GetOffsetExpressionString(offset).c_str());

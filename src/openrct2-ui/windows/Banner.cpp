@@ -1,33 +1,29 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/config/Config.h>
+#include <openrct2-ui/interface/Viewport.h>
+#include <openrct2-ui/interface/Widget.h>
 #include <openrct2-ui/windows/Window.h>
 
 #include <openrct2/Game.h>
-#include <openrct2/localisation/localisation.h>
-#include <openrct2/interface/viewport.h>
-#include <openrct2/interface/widget.h>
-#include <openrct2/world/scenery.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2-ui/interface/Dropdown.h>
 #include <openrct2/sprites.h>
+#include <openrct2/world/Banner.h>
+#include <openrct2/world/Scenery.h>
+#include <openrct2/actions/BannerSetNameAction.hpp>
 
 #define WW 113
 #define WH 96
 
+// clang-format off
 enum WINDOW_BANNER_WIDGET_IDX {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -41,7 +37,7 @@ enum WINDOW_BANNER_WIDGET_IDX {
     WIDX_TEXT_COLOUR_DROPDOWN_BUTTON
 };
 
-static const rct_string_id BannerColouredTextFormats[] = {
+static constexpr const rct_string_id BannerColouredTextFormats[] = {
     STR_TEXT_COLOR_BLACK,
     STR_TEXT_COLOR_GREY,
     STR_TEXT_COLOR_WHITE,
@@ -68,13 +64,13 @@ static rct_widget window_banner_widgets[] = {
     { WWT_FLATBTN,          1,  WW - 25,    WW - 2, 67,     90,         SPR_DEMOLISH,               STR_DEMOLISH_BANNER_TIP},           // demolish button
     { WWT_COLOURBTN,        1,  5,          16,     WH - 16,WH - 5,     0xFFFFFFFF,                 STR_SELECT_MAIN_SIGN_COLOUR_TIP},   // high money
     { WWT_DROPDOWN,         1,  43,         81,     WH - 16,WH - 5,     0xFFFFFFFF,                 STR_NONE},                          // high money
-    { WWT_DROPDOWN_BUTTON,  1,  70,         80,     WH - 15,WH - 6,     STR_DROPDOWN_GLYPH,         STR_SELECT_TEXT_COLOUR_TIP},        // high money
+    { WWT_BUTTON,           1,  70,         80,     WH - 15,WH - 6,     STR_DROPDOWN_GLYPH,         STR_SELECT_TEXT_COLOUR_TIP},        // high money
     { WIDGETS_END },
 };
 
 static void window_banner_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_banner_mousedown(rct_window *w, rct_widgetindex widgetIndex, rct_widget* widget);
-static void window_banner_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex);
+static void window_banner_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
 static void window_banner_textinput(rct_window *w, rct_widgetindex widgetIndex, char *text);
 static void window_banner_viewport_rotate(rct_window *w);
 static void window_banner_invalidate(rct_window *w);
@@ -110,6 +106,7 @@ static rct_window_event_list window_banner_events = {
     window_banner_paint,
     nullptr
 };
+// clang-format on
 
 /**
 *
@@ -140,13 +137,13 @@ rct_window * window_banner_open(rct_windownumber number)
     w->number = number;
     window_init_scroll_widgets(w);
 
-    sint32 view_x = gBanners[w->number].x << 5;
-    sint32 view_y = gBanners[w->number].y << 5;
+    int32_t view_x = gBanners[w->number].x << 5;
+    int32_t view_y = gBanners[w->number].y << 5;
 
     rct_tile_element* tile_element = map_get_first_element_at(view_x / 32, view_y / 32);
     while(1) {
         if (
-            (tile_element_get_type(tile_element) == TILE_ELEMENT_TYPE_BANNER) &&
+            (tile_element->GetType() == TILE_ELEMENT_TYPE_BANNER) &&
             (tile_element->properties.banner.index == w->number)
         ) {
             break;
@@ -155,7 +152,7 @@ rct_window * window_banner_open(rct_windownumber number)
         tile_element++;
     }
 
-    sint32 view_z = tile_element->base_height<<3;
+    int32_t view_z = tile_element->base_height<<3;
     w->frame_no = view_z;
 
     view_x += 16;
@@ -190,13 +187,13 @@ rct_window * window_banner_open(rct_windownumber number)
 static void window_banner_mouseup(rct_window *w, rct_widgetindex widgetIndex)
 {
     rct_banner* banner = &gBanners[w->number];
-    sint32 x = banner->x << 5;
-    sint32 y = banner->y << 5;
+    int32_t x = banner->x << 5;
+    int32_t y = banner->y << 5;
 
     rct_tile_element* tile_element = map_get_first_element_at(x / 32, y / 32);
 
     while (1){
-        if ((tile_element_get_type(tile_element) == TILE_ELEMENT_TYPE_BANNER) &&
+        if ((tile_element->GetType() == TILE_ELEMENT_TYPE_BANNER) &&
             (tile_element->properties.banner.index == w->number)) break;
         tile_element++;
     }
@@ -232,7 +229,7 @@ static void window_banner_mousedown(rct_window *w, rct_widgetindex widgetIndex, 
         break;
     case WIDX_TEXT_COLOUR_DROPDOWN_BUTTON:
 
-        for( sint32 i = 0; i < 13; ++i){
+        for( int32_t i = 0; i < 13; ++i){
             gDropdownItemsFormat[i] = STR_DROPDOWN_MENU_LABEL;
             gDropdownItemsArgs[i] = BannerColouredTextFormats[i + 1];
         }
@@ -259,7 +256,7 @@ static void window_banner_mousedown(rct_window *w, rct_widgetindex widgetIndex, 
  *
  *  rct2: 0x6ba517
  */
-static void window_banner_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex)
+static void window_banner_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex)
 {
     rct_banner* banner = &gBanners[w->number];
 
@@ -285,10 +282,10 @@ static void window_banner_dropdown(rct_window *w, rct_widgetindex widgetIndex, s
  */
 static void window_banner_textinput(rct_window *w, rct_widgetindex widgetIndex, char *text)
 {
-    if (widgetIndex == WIDX_BANNER_TEXT && text != nullptr) {
-        game_do_command(1, GAME_COMMAND_FLAG_APPLY, w->number, *((sint32*)(text + 0)), GAME_COMMAND_SET_BANNER_NAME, *((sint32*)(text + 8)), *((sint32*)(text + 4)));
-        game_do_command(2, GAME_COMMAND_FLAG_APPLY, w->number, *((sint32*)(text + 12)), GAME_COMMAND_SET_BANNER_NAME, *((sint32*)(text + 20)), *((sint32*)(text + 16)));
-        game_do_command(0, GAME_COMMAND_FLAG_APPLY, w->number, *((sint32*)(text + 24)), GAME_COMMAND_SET_BANNER_NAME, *((sint32*)(text + 32)), *((sint32*)(text + 28)));
+    if (widgetIndex == WIDX_BANNER_TEXT && text != nullptr)
+    {
+        auto bannerSetNameAction = BannerSetNameAction(w->number, text);
+        GameActions::Execute(&bannerSetNameAction);
     }
 }
 
@@ -350,13 +347,12 @@ static void window_banner_viewport_rotate(rct_window *w)
     w->viewport = nullptr;
 
     view->width = 0;
-    viewport_update_pointers();
 
     rct_banner* banner = &gBanners[w->number];
 
-    sint32 view_x = (banner->x << 5) + 16;
-    sint32 view_y = (banner->y << 5) + 16;
-    sint32 view_z = w->frame_no;
+    int32_t view_x = (banner->x << 5) + 16;
+    int32_t view_y = (banner->y << 5) + 16;
+    int32_t view_z = w->frame_no;
 
     // Create viewport
     rct_widget* viewportWidget = &window_banner_widgets[WIDX_VIEWPORT];

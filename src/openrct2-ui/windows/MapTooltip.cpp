@@ -1,27 +1,22 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2-ui/windows/Window.h>
 
 #include <openrct2/Context.h>
 #include <openrct2/Input.h>
-#include <openrct2/interface/themes.h>
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
+#include <openrct2/drawing/Drawing.h>
+#include "../interface/Theme.h"
 
+// clang-format off
 static rct_widget window_map_tooltip_widgets[] = {
     { WWT_IMGBTN, 0, 0, 199, 0, 29, 0xFFFFFFFF, STR_NONE },
     { WIDGETS_END }
@@ -60,12 +55,13 @@ static rct_window_event_list window_map_tooltip_events = {
     window_map_tooltip_paint,
     nullptr
 };
+// clang-format on
 
 #define MAP_TOOLTIP_ARGS
 
-static sint32 _lastCursorX;
-static sint32 _lastCursorY;
-static sint32 _cursorHoldDuration;
+static int32_t _lastCursorX;
+static int32_t _lastCursorY;
+static int32_t _cursorHoldDuration;
 
 static void window_map_tooltip_open();
 
@@ -82,7 +78,7 @@ void window_map_tooltip_update_visibility()
         return;
     }
 
-    sint32 cursorX, cursorY;
+    int32_t cursorX, cursorY;
 
     const CursorState * state = context_get_cursor_state();
     cursorX = state->x;
@@ -118,7 +114,7 @@ void window_map_tooltip_update_visibility()
 static void window_map_tooltip_open()
 {
     rct_window* w;
-    sint32 x, y, width, height;
+    int32_t x, y, width, height;
 
     width = 200;
     height = 44;

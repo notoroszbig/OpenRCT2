@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include "../common.h"
 
@@ -28,9 +21,10 @@
     #include <unistd.h>
 #elif defined(_WIN32)
     // Windows needs this for widechar <-> utf8 conversion utils
-    #include "../localisation/language.h"
+    #include "../localisation/Language.h"
 #endif
 
+#include <memory>
 #include <stack>
 #include <string>
 #include <vector>
@@ -38,8 +32,6 @@
 #include "Memory.hpp"
 #include "Path.hpp"
 #include "String.hpp"
-
-#include "../platform/platform.h"
 
 enum class DIRECTORY_CHILD_TYPE
 {
@@ -53,11 +45,11 @@ struct DirectoryChild
     std::string Name;
 
     // Files only
-    uint64 Size         = 0;
-    uint64 LastModified = 0;
+    uint64_t Size         = 0;
+    uint64_t LastModified = 0;
 };
 
-static uint32 GetPathChecksum(const utf8 * path);
+static uint32_t GetPathChecksum(const utf8 * path);
 static bool MatchWildcard(const utf8 * fileName, const utf8 * pattern);
 
 class FileScannerBase : public IFileScanner
@@ -67,7 +59,7 @@ private:
     {
         std::string                 Path;
         std::vector<DirectoryChild> Listing;
-        sint32                      Index;
+        int32_t                      Index = 0;
     };
 
     // Options
@@ -76,7 +68,7 @@ private:
     bool                        _recurse;
 
     // State
-    bool                        _started;
+    bool                        _started = false;
     std::stack<DirectoryState>  _directoryStack;
 
     // Current
@@ -133,11 +125,11 @@ public:
             PushState(_rootPath);
         }
 
-        while (_directoryStack.size() != 0)
+        while (!_directoryStack.empty())
         {
             DirectoryState * state = &_directoryStack.top();
             state->Index++;
-            if (state->Index >= (sint32)state->Listing.size())
+            if (state->Index >= (int32_t)state->Listing.size())
             {
                 _directoryStack.pop();
             }
@@ -146,11 +138,14 @@ public:
                 const DirectoryChild * child = &state->Listing[state->Index];
                 if (child->Type == DIRECTORY_CHILD_TYPE::DC_DIRECTORY)
                 {
-                    utf8 childPath[MAX_PATH];
-                    String::Set(childPath, sizeof(childPath), state->Path.c_str());
-                    Path::Append(childPath, sizeof(childPath), child->Name.c_str());
+                    if (_recurse)
+                    {
+                        utf8 childPath[MAX_PATH];
+                        String::Set(childPath, sizeof(childPath), state->Path.c_str());
+                        Path::Append(childPath, sizeof(childPath), child->Name.c_str());
 
-                    PushState(childPath);
+                        PushState(childPath);
+                    }
                 }
                 else if (PatternMatch(child->Name))
                 {
@@ -166,6 +161,8 @@ public:
         }
         return false;
     }
+
+    virtual void GetDirectoryChildren(std::vector<DirectoryChild> &children, const std::string &path) abstract;
 
 private:
     void PushState(const std::string &directory)
@@ -216,10 +213,6 @@ private:
         patterns.shrink_to_fit();
         return patterns;
     }
-
-protected:
-    virtual void GetDirectoryChildren(std::vector<DirectoryChild> &children, const std::string &path) abstract;
-
 };
 
 #ifdef _WIN32
@@ -232,7 +225,6 @@ public:
     {
     }
 
-protected:
     void GetDirectoryChildren(std::vector<DirectoryChild> &children, const std::string &path) override
     {
         std::string pattern = path + "\\*";
@@ -274,8 +266,8 @@ private:
         else
         {
             result.Type = DIRECTORY_CHILD_TYPE::DC_FILE;
-            result.Size = ((uint64)child->nFileSizeHigh << 32ULL) | (uint64)child->nFileSizeLow;
-            result.LastModified = ((uint64)child->ftLastWriteTime.dwHighDateTime << 32ULL) | (uint64)child->ftLastWriteTime.dwLowDateTime;
+            result.Size = ((uint64_t)child->nFileSizeHigh << 32ULL) | (uint64_t)child->nFileSizeLow;
+            result.LastModified = ((uint64_t)child->ftLastWriteTime.dwHighDateTime << 32ULL) | (uint64_t)child->ftLastWriteTime.dwLowDateTime;
         }
         return result;
     }
@@ -293,14 +285,13 @@ public:
     {
     }
 
-protected:
     void GetDirectoryChildren(std::vector<DirectoryChild> &children, const std::string &path) override
     {
         struct dirent * * namelist;
-        sint32 count = scandir(path.c_str(), &namelist, FilterFunc, alphasort);
+        int32_t count = scandir(path.c_str(), &namelist, FilterFunc, alphasort);
         if (count > 0)
         {
-            for (sint32 i = 0; i < count; i++)
+            for (int32_t i = 0; i < count; i++)
             {
                 const struct dirent * node = namelist[i];
                 if (!String::Equals(node->d_name, ".") &&
@@ -316,7 +307,7 @@ protected:
     }
 
 private:
-    static sint32 FilterFunc(const struct dirent * d)
+    static int32_t FilterFunc(const struct dirent * d)
     {
         return 1;
     }
@@ -339,8 +330,8 @@ private:
             String::Set(path, pathSize, directory);
             Path::Append(path, pathSize, node->d_name);
 
-            struct stat statInfo;
-            sint32 statRes = stat(path, &statInfo);
+            struct stat statInfo{};
+            int32_t statRes = stat(path, &statInfo);
             if (statRes != -1)
             {
                 result.Size = statInfo.st_size;
@@ -380,17 +371,36 @@ void Path::QueryDirectory(QueryDirectoryResult * result, const std::string &patt
         result->TotalFiles++;
         result->TotalFileSize += fileInfo->Size;
         result->FileDateModifiedChecksum ^=
-            (uint32)(fileInfo->LastModified >> 32) ^
-            (uint32)(fileInfo->LastModified & 0xFFFFFFFF);
+            (uint32_t)(fileInfo->LastModified >> 32) ^
+            (uint32_t)(fileInfo->LastModified & 0xFFFFFFFF);
         result->FileDateModifiedChecksum = ror32(result->FileDateModifiedChecksum, 5);
         result->PathChecksum += GetPathChecksum(path);
     }
     delete scanner;
 }
 
-static uint32 GetPathChecksum(const utf8 * path)
+std::vector<std::string> Path::GetDirectories(const std::string &path)
 {
-    uint32 hash = 0xD8430DED;
+    auto scanner = std::unique_ptr<IFileScanner>(ScanDirectory(path, false));
+    auto baseScanner = static_cast<FileScannerBase *>(scanner.get());
+
+    std::vector<DirectoryChild> children;
+    baseScanner->GetDirectoryChildren(children, path);
+
+    std::vector<std::string> subDirectories;
+    for (const auto &c : children)
+    {
+        if (c.Type == DIRECTORY_CHILD_TYPE::DC_DIRECTORY)
+        {
+            subDirectories.push_back(c.Name);
+        }
+    }
+    return subDirectories;
+}
+
+static uint32_t GetPathChecksum(const utf8 * path)
+{
+    uint32_t hash = 0xD8430DED;
     for (const utf8 * ch = path; *ch != '\0'; ch++)
     {
         hash += (*ch);

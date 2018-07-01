@@ -1,3 +1,12 @@
+/*****************************************************************************
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
+
 #include <string>
 #include <gtest/gtest.h>
 #include <openrct2/audio/AudioContext.h>
@@ -6,6 +15,7 @@
 #include <openrct2/core/Path.hpp>
 #include <openrct2/core/String.hpp>
 #include <openrct2/OpenRCT2.h>
+#include <openrct2/ride/Ride.h>
 #include "TestData.h"
 
 #include <openrct2/platform/platform.h>
@@ -58,6 +68,7 @@ TEST_F(RideRatings, all)
     std::string path = TestData::GetParkPath("bpb.sv6");
 
     gOpenRCT2Headless = true;
+    gOpenRCT2NoGraphics = true;
 
     core_init();
     auto context = CreateContext();
@@ -89,6 +100,4 @@ TEST_F(RideRatings, all)
             expI++;
         }
     }
-
-    delete context;
 }

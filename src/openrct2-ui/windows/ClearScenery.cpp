@@ -1,28 +1,22 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/Context.h>
 #include <openrct2-ui/windows/Window.h>
 #include <openrct2/core/Math.hpp>
 
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
-#include <openrct2/world/scenery.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
+#include <openrct2/world/Scenery.h>
 #include <openrct2-ui/interface/LandTool.h>
 
+// clang-format off
 enum WINDOW_CLEAR_SCENERY_WIDGET_IDX {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -34,8 +28,6 @@ enum WINDOW_CLEAR_SCENERY_WIDGET_IDX {
     WIDX_LARGE_SCENERY,
     WIDX_FOOTPATH
 };
-
-validate_global_widx(WC_CLEAR_SCENERY, WIDX_PREVIEW);
 
 static rct_widget window_clear_scenery_widgets[] = {
     { WWT_FRAME,    0,  0,  97, 0,  93, 0xFFFFFFFF,                                 STR_NONE },                         // panel / background
@@ -89,6 +81,7 @@ static rct_window_event_list window_clear_scenery_events = {
     window_clear_scenery_paint,
     nullptr
 };
+// clang-format on
 
 /**
  *
@@ -125,7 +118,7 @@ rct_window * window_clear_scenery_open()
  *
  *  rct2: 0x006E6B65
  */
-static void window_clear_scenery_close(rct_window *w)
+static void window_clear_scenery_close([[maybe_unused]] rct_window * w)
 {
     // If the tool wasn't changed, turn tool off
     if (clear_scenery_tool_is_active())
@@ -160,19 +153,19 @@ static void window_clear_scenery_mouseup(rct_window *w, rct_widgetindex widgetIn
     }
 }
 
-static void window_clear_scenery_mousedown(rct_window *w, rct_widgetindex widgetIndex, rct_widget *widget)
+static void window_clear_scenery_mousedown(rct_window * w, rct_widgetindex widgetIndex, [[maybe_unused]] rct_widget * widget)
 {
     switch (widgetIndex) {
     case WIDX_DECREMENT:
         // Decrement land tool size, if it stays within the limit
-        gLandToolSize = Math::Max(MINIMUM_TOOL_SIZE, gLandToolSize - 1);
+        gLandToolSize = std::max(MINIMUM_TOOL_SIZE, gLandToolSize - 1);
 
         // Invalidate the window
         window_invalidate(w);
         break;
     case WIDX_INCREMENT:
         // Increment land tool size, if it stays within the limit
-        gLandToolSize = Math::Min(MAXIMUM_TOOL_SIZE, gLandToolSize + 1);
+        gLandToolSize = std::min(MAXIMUM_TOOL_SIZE, gLandToolSize + 1);
 
         // Invalidate the window
         window_invalidate(w);
@@ -182,7 +175,7 @@ static void window_clear_scenery_mousedown(rct_window *w, rct_widgetindex widget
 
 static void window_clear_scenery_textinput(rct_window *w, rct_widgetindex widgetIndex, char *text)
 {
-    sint32 size;
+    int32_t size;
     char* end;
 
     if (widgetIndex != WIDX_PREVIEW || text == nullptr)
@@ -190,8 +183,8 @@ static void window_clear_scenery_textinput(rct_window *w, rct_widgetindex widget
 
     size = strtol(text, &end, 10);
     if (*end == '\0') {
-        size = Math::Max(MINIMUM_TOOL_SIZE, size);
-        size = Math::Min(MAXIMUM_TOOL_SIZE, size);
+        size = std::max(MINIMUM_TOOL_SIZE, size);
+        size = std::min(MAXIMUM_TOOL_SIZE, size);
         gLandToolSize = size;
         window_invalidate(w);
     }
@@ -238,7 +231,7 @@ static void window_clear_scenery_invalidate(rct_window *w)
  */
 static void window_clear_scenery_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
-    sint32 x, y;
+    int32_t x, y;
 
     window_draw_widgets(w, dpi);
 

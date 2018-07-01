@@ -1,25 +1,20 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include "../config/Config.h"
 #include "../Context.h"
 #include "../core/Console.hpp"
+#include "../GameState.h"
 #include "../interface/Screenshot.h"
 #include "../network/network.h"
 #include "../OpenRCT2.h"
+#include "../scenario/Scenario.h"
 #include "../scenario/ScenarioRepository.h"
 #include "TitleScreen.h"
 #include "TitleSequence.h"
@@ -27,24 +22,28 @@
 #include "TitleSequencePlayer.h"
 
 #include "../audio/audio.h"
-#include "../drawing/drawing.h"
+#include "../drawing/Drawing.h"
 #include "../Game.h"
 #include "../Input.h"
-#include "../interface/viewport.h"
-#include "../interface/window.h"
-#include "../localisation/localisation.h"
+#include "../interface/Viewport.h"
+#include "../interface/Window.h"
+#include "../localisation/Localisation.h"
+#include "../ui/UiContext.h"
+
+using namespace OpenRCT2;
 
 // TODO Remove when no longer required.
+bool gPreviewingTitleSequenceInGame;
 static TitleScreen * _singleton = nullptr;
 
-TitleScreen::TitleScreen()
+TitleScreen::TitleScreen(GameState& gameState)
+    : _gameState(gameState)
 {
     _singleton = this;
 }
 
 TitleScreen::~TitleScreen()
 {
-    delete _sequencePlayer;
     _singleton = nullptr;
 }
 
@@ -84,6 +83,11 @@ void TitleScreen::StopPreviewingSequence()
 {
     if (_previewingSequence)
     {
+        rct_window * mainWindow = window_get_main();
+        if (mainWindow != nullptr)
+        {
+            window_unfollow_sprite(mainWindow);
+        }
         _previewingSequence = false;
         _currentSequence = title_get_config_sequence();
         gPreviewingTitleSequenceInGame = false;
@@ -120,7 +124,7 @@ void TitleScreen::Load()
 
     network_close();
     audio_stop_all_music_and_sounds();
-    game_init_all(150);
+    GetContext()->GetGameState()->InitAll(150);
     viewport_init_all();
     context_open_window(WC_MAIN_WINDOW);
     CreateWindows();
@@ -158,13 +162,13 @@ void TitleScreen::Update()
         TryLoadSequence();
         _sequencePlayer->Update();
 
-        sint32 numUpdates = 1;
+        int32_t numUpdates = 1;
         if (gGameSpeed > 1) {
             numUpdates = 1 << (gGameSpeed - 1);
         }
-        for (sint32 i = 0; i < numUpdates; i++)
+        for (int32_t i = 0; i < numUpdates; i++)
         {
-            game_logic_update();
+            _gameState.UpdateLogic();
         }
         update_palette_effects();
         // update_rain_animation();
@@ -217,8 +221,7 @@ void TitleScreen::TitleInitialise()
 {
     if (_sequencePlayer == nullptr)
     {
-        IScenarioRepository * scenarioRepository = GetScenarioRepository();
-        _sequencePlayer = CreateTitleSequencePlayer(scenarioRepository);
+        _sequencePlayer = GetContext()->GetUiContext()->GetTitleSequencePlayer();
     }
     size_t seqId = title_get_config_sequence();
     if (seqId == SIZE_MAX)
@@ -229,8 +232,7 @@ void TitleScreen::TitleInitialise()
             seqId = 0;
         }
     }
-    ChangePresetSequence((sint32)seqId);
-    TryLoadSequence();
+    ChangePresetSequence((int32_t)seqId);
 }
 
 bool TitleScreen::TryLoadSequence(bool loadPreview)
@@ -267,124 +269,126 @@ bool TitleScreen::TryLoadSequence(bool loadPreview)
         _loadedTitleSequenceId = SIZE_MAX;
         if (!loadPreview)
         {
-            game_init_all(150);
+            GetContext()->GetGameState()->InitAll(150);
         }
         return false;
     }
     return true;
 }
 
-extern "C"
+void title_load()
 {
-    void title_load()
+    if (_singleton != nullptr)
     {
-        if (_singleton != nullptr)
-        {
-            _singleton->Load();
-        }
-    }
-
-    void title_create_windows()
-    {
-        if (_singleton != nullptr)
-        {
-            _singleton->CreateWindows();
-        }
-    }
-
-    void * title_get_sequence_player()
-    {
-        void * result = nullptr;
-        if (_singleton != nullptr)
-        {
-            result = _singleton->GetSequencePlayer();
-        }
-        return result;
-    }
-
-    void title_sequence_change_preset(size_t preset)
-    {
-        if (_singleton != nullptr)
-        {
-            _singleton->ChangePresetSequence(preset);
-        }
-    }
-
-    bool title_should_hide_version_info()
-    {
-        bool result = false;
-        if (_singleton != nullptr)
-        {
-            result = _singleton->ShouldHideVersionInfo();
-        }
-        return result;
-    }
-
-    void title_set_hide_version_info(bool value)
-    {
-        if (_singleton != nullptr)
-        {
-            _singleton->SetHideVersionInfo(value);
-        }
-    }
-
-    size_t title_get_config_sequence()
-    {
-        return title_sequence_manager_get_index_for_config_id(gConfigInterface.current_title_sequence_preset);
-    }
-
-    size_t title_get_current_sequence()
-    {
-        size_t result = 0;
-        if (_singleton != nullptr)
-        {
-            result = _singleton->GetCurrentSequence();
-        }
-        return result;
-    }
-
-    bool title_preview_sequence(size_t value)
-    {
-        if (_singleton != nullptr)
-        {
-            return _singleton->PreviewSequence(value);
-        }
-        return false;
-    }
-
-    void title_stop_previewing_sequence()
-    {
-        if (_singleton != nullptr)
-        {
-            _singleton->StopPreviewingSequence();
-        }
-    }
-
-    bool title_is_previewing_sequence()
-    {
-        if (_singleton != nullptr)
-        {
-            return _singleton->IsPreviewingSequence();
-        }
-        return false;
-    }
-
-    void DrawOpenRCT2(rct_drawpixelinfo * dpi, sint32 x, sint32 y)
-    {
-        utf8 buffer[256];
-
-        // Write format codes
-        utf8 * ch = buffer;
-        ch = utf8_write_codepoint(ch, FORMAT_MEDIUMFONT);
-        ch = utf8_write_codepoint(ch, FORMAT_OUTLINE);
-        ch = utf8_write_codepoint(ch, FORMAT_WHITE);
-
-        // Write name and version information
-        openrct2_write_full_version_info(ch, sizeof(buffer) - (ch - buffer));
-        gfx_draw_string(dpi, buffer, COLOUR_BLACK, x + 5, y + 5 - 13);
-
-        // Write platform information
-        snprintf(ch, 256 - (ch - buffer), "%s (%s)", OPENRCT2_PLATFORM, OPENRCT2_ARCHITECTURE);
-        gfx_draw_string(dpi, buffer, COLOUR_BLACK, x + 5, y + 5);
+        _singleton->Load();
     }
 }
+
+void title_create_windows()
+{
+    if (_singleton != nullptr)
+    {
+        _singleton->CreateWindows();
+    }
+}
+
+void * title_get_sequence_player()
+{
+    void * result = nullptr;
+    if (_singleton != nullptr)
+    {
+        result = _singleton->GetSequencePlayer();
+    }
+    return result;
+}
+
+void title_sequence_change_preset(size_t preset)
+{
+    if (_singleton != nullptr)
+    {
+        _singleton->ChangePresetSequence(preset);
+    }
+}
+
+bool title_should_hide_version_info()
+{
+    bool result = false;
+    if (_singleton != nullptr)
+    {
+        result = _singleton->ShouldHideVersionInfo();
+    }
+    return result;
+}
+
+void title_set_hide_version_info(bool value)
+{
+    if (_singleton != nullptr)
+    {
+        _singleton->SetHideVersionInfo(value);
+    }
+}
+
+size_t title_get_config_sequence()
+{
+    return title_sequence_manager_get_index_for_config_id(gConfigInterface.current_title_sequence_preset);
+}
+
+size_t title_get_current_sequence()
+{
+    size_t result = 0;
+    if (_singleton != nullptr)
+    {
+        result = _singleton->GetCurrentSequence();
+    }
+    return result;
+}
+
+bool title_preview_sequence(size_t value)
+{
+    if (_singleton != nullptr)
+    {
+        return _singleton->PreviewSequence(value);
+    }
+    return false;
+}
+
+void title_stop_previewing_sequence()
+{
+    if (_singleton != nullptr)
+    {
+        _singleton->StopPreviewingSequence();
+    }
+}
+
+bool title_is_previewing_sequence()
+{
+    if (_singleton != nullptr)
+    {
+        return _singleton->IsPreviewingSequence();
+    }
+    return false;
+}
+
+void DrawOpenRCT2(rct_drawpixelinfo * dpi, int32_t x, int32_t y)
+{
+    utf8 buffer[256];
+
+    // Write format codes
+    utf8 * ch = buffer;
+    ch = utf8_write_codepoint(ch, FORMAT_MEDIUMFONT);
+    ch = utf8_write_codepoint(ch, FORMAT_OUTLINE);
+    ch = utf8_write_codepoint(ch, FORMAT_WHITE);
+
+    // Write name and version information
+    openrct2_write_full_version_info(ch, sizeof(buffer) - (ch - buffer));
+    gfx_draw_string(dpi, buffer, COLOUR_BLACK, x + 5, y + 5 - 13);
+
+    // Invalidate screen area
+    int16_t width = (int16_t)gfx_get_string_width(buffer);
+    gfx_set_dirty_blocks(x, y, x + width, y + 30); // 30 is an arbitrary height to catch both strings
+
+    // Write platform information
+    snprintf(ch, 256 - (ch - buffer), "%s (%s)", OPENRCT2_PLATFORM, OPENRCT2_ARCHITECTURE);
+    gfx_draw_string(dpi, buffer, COLOUR_BLACK, x + 5, y + 5);
+}
+

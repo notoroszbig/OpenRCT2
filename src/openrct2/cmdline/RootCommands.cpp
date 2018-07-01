@@ -1,32 +1,26 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
-#include <time.h>
-
-#include "../core/Guard.hpp"
+#include <ctime>
+#include <memory>
 
 #include "../config/Config.h"
-#include "../platform/crash.h"
+#include "../Context.h"
+#include "../platform/Crash.h"
 #include "../platform/platform.h"
-#include "../localisation/language.h"
-
+#include "../localisation/Language.h"
 #include "../core/Console.hpp"
+#include "../core/Guard.hpp"
 #include "../core/Memory.hpp"
 #include "../core/Path.hpp"
 #include "../core/String.hpp"
+#include "../core/Util.hpp"
 #include "../network/network.h"
 #include "../object/ObjectRepository.h"
 #include "../OpenRCT2.h"
@@ -41,12 +35,12 @@
 #endif // USE_BREAKPAD
 
 #ifndef DISABLE_NETWORK
-sint32  gNetworkStart = NETWORK_MODE_NONE;
+int32_t  gNetworkStart = NETWORK_MODE_NONE;
 char gNetworkStartHost[128];
-sint32  gNetworkStartPort = NETWORK_DEFAULT_PORT;
+int32_t  gNetworkStartPort = NETWORK_DEFAULT_PORT;
 char* gNetworkStartAddress = nullptr;
 
-static uint32 _port            = 0;
+static uint32_t _port            = 0;
 static char*  _address         = nullptr;
 #endif
 
@@ -63,7 +57,8 @@ static utf8 * _openrctDataPath = nullptr;
 static utf8 * _rct2DataPath    = nullptr;
 static bool   _silentBreakpad  = false;
 
-static const CommandLineOptionDefinition StandardOptions[]
+// clang-format off
+static constexpr const CommandLineOptionDefinition StandardOptions[]
 {
     { CMDLINE_TYPE_SWITCH,  &_help,            'h', "help",              "show this help message and exit"                            },
     { CMDLINE_TYPE_SWITCH,  &_version,         'v', "version",           "show version information and exit"                          },
@@ -89,8 +84,10 @@ static const CommandLineOptionDefinition StandardOptions[]
 static exitcode_t HandleNoCommand(CommandLineArgEnumerator * enumerator);
 static exitcode_t HandleCommandEdit(CommandLineArgEnumerator * enumerator);
 static exitcode_t HandleCommandIntro(CommandLineArgEnumerator * enumerator);
+#ifndef DISABLE_NETWORK
 static exitcode_t HandleCommandHost(CommandLineArgEnumerator * enumerator);
 static exitcode_t HandleCommandJoin(CommandLineArgEnumerator * enumerator);
+#endif
 static exitcode_t HandleCommandSetRCT2(CommandLineArgEnumerator * enumerator);
 static exitcode_t HandleCommandScanObjects(CommandLineArgEnumerator * enumerator);
 
@@ -98,7 +95,7 @@ static exitcode_t HandleCommandScanObjects(CommandLineArgEnumerator * enumerator
 
 static bool _removeShell = false;
 
-static const CommandLineOptionDefinition RegisterShellOptions[]
+static constexpr const CommandLineOptionDefinition RegisterShellOptions[]
 {
     { CMDLINE_TYPE_SWITCH, &_removeShell, 'd', "remove", "remove shell integration" },
 };
@@ -149,13 +146,14 @@ const CommandLineExample CommandLine::RootExamples[]
     { "./SnowyPark.sc6",                              "install and open a scenario"            },
     { "./ShuttleLoop.td6",                            "install a track"                        },
 #ifndef DISABLE_HTTP
-    { "https://openrct2.website/files/SnowyPark.sv6", "download and open a saved park"         },
+    { "https://openrct2.io/files/SnowyPark.sv6", "download and open a saved park"         },
 #endif
 #ifndef DISABLE_NETWORK
     { "host ./my_park.sv6 --port 11753 --headless",   "run a headless server for a saved park" },
 #endif
     ExampleTableEnd
 };
+// clang-format on
 
 exitcode_t CommandLine::HandleCommandDefault()
 {
@@ -195,25 +193,29 @@ exitcode_t CommandLine::HandleCommandDefault()
 
     if (_userDataPath != nullptr)
     {
-        String::Set(gCustomUserDataPath, sizeof(gCustomUserDataPath), _userDataPath);
+        utf8 absolutePath[MAX_PATH]{};
+        Path::GetAbsolute(absolutePath, Util::CountOf(absolutePath), _userDataPath);
+        String::Set(gCustomUserDataPath, Util::CountOf(gCustomUserDataPath), absolutePath);
         Memory::Free(_userDataPath);
     }
 
     if (_openrctDataPath != nullptr)
     {
-        String::Set(gCustomOpenrctDataPath, sizeof(gCustomOpenrctDataPath), _openrctDataPath);
+        utf8 absolutePath[MAX_PATH]{};
+        Path::GetAbsolute(absolutePath, Util::CountOf(absolutePath), _openrctDataPath);
+        String::Set(gCustomOpenrctDataPath, Util::CountOf(gCustomOpenrctDataPath), absolutePath);
         Memory::Free(_openrctDataPath);
     }
 
     if (_rct2DataPath != nullptr)
     {
-        String::Set(gCustomRCT2DataPath, sizeof(gCustomRCT2DataPath), _rct2DataPath);
+        String::Set(gCustomRCT2DataPath, Util::CountOf(gCustomRCT2DataPath), _rct2DataPath);
         Memory::Free(_rct2DataPath);
     }
 
     if (_password != nullptr)
     {
-        String::Set(gCustomPassword, sizeof(gCustomPassword), _password);
+        String::Set(gCustomPassword, Util::CountOf(gCustomPassword), _password);
         Memory::Free(_password);
     }
 
@@ -258,7 +260,7 @@ exitcode_t HandleCommandEdit(CommandLineArgEnumerator * enumerator)
     return EXITCODE_CONTINUE;
 }
 
-exitcode_t HandleCommandIntro(CommandLineArgEnumerator * enumerator)
+exitcode_t HandleCommandIntro([[maybe_unused]] CommandLineArgEnumerator * enumerator)
 {
     exitcode_t result = CommandLine::HandleCommandDefault();
     if (result != EXITCODE_CONTINUE)
@@ -381,7 +383,7 @@ static exitcode_t HandleCommandSetRCT2(CommandLineArgEnumerator * enumerator)
     }
 }
 
-static exitcode_t HandleCommandScanObjects(CommandLineArgEnumerator * enumerator)
+static exitcode_t HandleCommandScanObjects([[maybe_unused]] CommandLineArgEnumerator * enumerator)
 {
     exitcode_t result = CommandLine::HandleCommandDefault();
     if (result != EXITCODE_CONTINUE)
@@ -389,18 +391,17 @@ static exitcode_t HandleCommandScanObjects(CommandLineArgEnumerator * enumerator
         return result;
     }
 
-    auto env = OpenRCT2::CreatePlatformEnvironment();
+    gOpenRCT2Headless = true;
 
-    // HACK: set gCurrentLanguage otherwise it be wrong for the index file
-    gCurrentLanguage = gConfigGeneral.language;
-
+    auto context = std::unique_ptr<OpenRCT2::IContext>(OpenRCT2::CreateContext());
+    auto env = context->GetPlatformEnvironment();
     auto objectRepository = CreateObjectRepository(env);
-    objectRepository->Construct();
+    objectRepository->Construct(gConfigGeneral.language);
     return EXITCODE_OK;
 }
 
 #if defined(_WIN32) && !defined(__MINGW32__)
-static exitcode_t HandleCommandRegisterShell(CommandLineArgEnumerator * enumerator)
+static exitcode_t HandleCommandRegisterShell([[maybe_unused]] CommandLineArgEnumerator * enumerator)
 {
     exitcode_t result = CommandLine::HandleCommandDefault();
     if (result != EXITCODE_CONTINUE)
@@ -431,7 +432,7 @@ static void PrintAbout()
     Console::WriteLine("includes some 3rd party software under different licenses. See the file");
     Console::WriteLine("\"licence.txt\" shipped with the game for details.");
     Console::WriteLine();
-    Console::WriteLine("Website:      https://openrct2.website");
+    Console::WriteLine("Website:      https://openrct2.io");
     Console::WriteLine("GitHub:       https://github.com/OpenRCT2/OpenRCT2");
     Console::WriteLine("Contributors: https://github.com/OpenRCT2/OpenRCT2/blob/develop/contributors.md");
     Console::WriteLine();
@@ -458,7 +459,7 @@ static void PrintLaunchInformation()
     Console::WriteLine();
     Console::WriteFormat("%s (%s)", OPENRCT2_PLATFORM, OPENRCT2_ARCHITECTURE);
     Console::WriteLine();
-    Console::WriteFormat("@ %s", OPENRCT2_TIMESTAMP);
+    Console::WriteFormat("@ %s", OPENRCT2_CUSTOM_INFO);
     Console::WriteLine();
     Console::WriteLine();
 

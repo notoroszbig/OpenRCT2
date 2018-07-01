@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/OpenRCT2.h>
 #include <openrct2/core/Math.hpp>
@@ -21,14 +14,18 @@
 
 #include <openrct2/Editor.h>
 #include <openrct2/Game.h>
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
-#include <openrct2/localisation/string_ids.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
+#include <openrct2/localisation/StringIds.h>
 #include <openrct2/sprites.h>
 #include <openrct2-ui/interface/Dropdown.h>
+#include <openrct2/drawing/Drawing.h>
+#include <openrct2/world/Park.h>
+#include <openrct2/management/Finance.h>
 
 #pragma region Widgets
 
+// clang-format off
 enum {
     WINDOW_EDITOR_SCENARIO_OPTIONS_PAGE_FINANCIAL,
     WINDOW_EDITOR_SCENARIO_OPTIONS_PAGE_GUESTS,
@@ -103,18 +100,10 @@ static rct_widget window_editor_scenario_options_financial_widgets[] = {
     { WWT_TAB,              1,  65,     95,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SCENARIO_OPTIONS_PARK_TIP               },
 
     { WWT_CHECKBOX,         1,  8,      271,    48,     59,     STR_MAKE_PARK_NO_MONEY,                 STR_MAKE_PARK_NO_MONEY_TIP                  },
-    { WWT_SPINNER,          1,  168,    267,    65,     76,     STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  256,    266,    66,     70,     STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  256,    266,    71,     75,     STR_NUMERIC_DOWN,                       STR_NONE                                    },
-    { WWT_SPINNER,          1,  168,    267,    82,     93,     STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  256,    266,    83,     87,     STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  256,    266,    88,     92,     STR_NUMERIC_DOWN,                       STR_NONE                                    },
-    { WWT_SPINNER,          1,  168,    267,    99,     110,    STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  256,    266,    100,    104,    STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  256,    266,    105,    109,    STR_NUMERIC_DOWN,                       STR_NONE                                    },
-    { WWT_SPINNER,          1,  168,    237,    116,    127,    STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  226,    236,    117,    121,    STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  226,    236,    122,    126,    STR_NUMERIC_DOWN,                       STR_NONE                                    },
+      SPINNER_WIDGETS      (1,  168,    267,    65,     76,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
+      SPINNER_WIDGETS      (1,  168,    267,    82,     93,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
+      SPINNER_WIDGETS      (1,  168,    267,    99,     110,    STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
+      SPINNER_WIDGETS      (1,  168,    237,    116,    127,    STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
     { WWT_CHECKBOX,         1,  8,      271,    133,    144,    STR_FORBID_MARKETING,                   STR_FORBID_MARKETING_TIP                    },
     { WIDGETS_END }
 };
@@ -128,18 +117,10 @@ static rct_widget window_editor_scenario_options_guests_widgets[] = {
     { WWT_TAB,              1,  34,     64,     17,     46,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SCENARIO_OPTIONS_GUESTS_TIP             },
     { WWT_TAB,              1,  65,     95,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SCENARIO_OPTIONS_PARK_TIP               },
 
-    { WWT_SPINNER,          1,  268,    337,    48,     59,     STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  326,    336,    49,     53,     STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  326,    336,    54,     58,     STR_NUMERIC_DOWN,                       STR_NONE                                    },
-    { WWT_SPINNER,          1,  268,    337,    65,     76,     STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  326,    336,    66,     70,     STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  326,    336,    71,     75,     STR_NUMERIC_DOWN,                       STR_NONE                                    },
-    { WWT_SPINNER,          1,  268,    337,    82,     93,     STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  326,    336,    83,     87,     STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  326,    336,    88,     92,     STR_NUMERIC_DOWN,                       STR_NONE                                    },
-    { WWT_SPINNER,          1,  268,    337,    99,     110,    STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  326,    336,    100,    104,    STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  326,    336,    105,    109,    STR_NUMERIC_DOWN,                       STR_NONE                                    },
+      SPINNER_WIDGETS      (1,  268,    337,    48,     59,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
+      SPINNER_WIDGETS      (1,  268,    337,    65,     76,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
+      SPINNER_WIDGETS      (1,  268,    337,    82,     93,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
+      SPINNER_WIDGETS      (1,  268,    337,    99,     110,    STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
     { WWT_CHECKBOX,         1,  8,      371,    116,    127,    STR_GUESTS_PREFER_LESS_INTENSE_RIDES,   STR_GUESTS_PREFER_LESS_INTENSE_RIDES_TIP    },
     { WWT_CHECKBOX,         1,  8,      371,    133,    144,    STR_GUESTS_PREFER_MORE_INTENSE_RIDES,   STR_GUESTS_PREFER_MORE_INTENSE_RIDES_TIP    },
     { WIDGETS_END }
@@ -154,17 +135,11 @@ static rct_widget window_editor_scenario_options_park_widgets[] = {
     { WWT_TAB,              1,  34,     64,     17,     46,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SCENARIO_OPTIONS_GUESTS_TIP             },
     { WWT_TAB,              1,  65,     95,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SCENARIO_OPTIONS_PARK_TIP               },
 
-    { WWT_SPINNER,          1,  188,    257,    48,     59,     STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  246,    256,    49,     53,     STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  246,    256,    54,     58,     STR_NUMERIC_DOWN,                       STR_NONE                                    },
-    { WWT_SPINNER,          1,  188,    257,    65,     76,     STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  246,    256,    66,     70,     STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  246,    256,    71,     75,     STR_NUMERIC_DOWN,                       STR_NONE                                    },
+      SPINNER_WIDGETS      (1,  188,    257,    48,     59,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
+      SPINNER_WIDGETS      (1,  188,    257,    65,     76,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
     { WWT_DROPDOWN,         1,  8,      217,    82,     93,     STR_NONE,                               STR_PAY_FOR_PARK_PAY_FOR_RIDES_TIP          },
-    { WWT_DROPDOWN_BUTTON,  1,  206,    216,    83,     92,     STR_DROPDOWN_GLYPH,                     STR_PAY_FOR_PARK_PAY_FOR_RIDES_TIP          },
-    { WWT_SPINNER,          1,  328,    397,    82,     93,     STR_NONE,                               STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  386,    396,    83,     87,     STR_NUMERIC_UP,                         STR_NONE                                    },
-    { WWT_DROPDOWN_BUTTON,  1,  386,    396,    88,     92,     STR_NUMERIC_DOWN,                       STR_NONE                                    },
+    { WWT_BUTTON,           1,  206,    216,    83,     92,     STR_DROPDOWN_GLYPH,                     STR_PAY_FOR_PARK_PAY_FOR_RIDES_TIP          },
+      SPINNER_WIDGETS      (1,  328,    397,    82,     93,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
     { WWT_CHECKBOX,         1,  8,      391,    99,     110,    STR_FORBID_TREE_REMOVAL,                STR_FORBID_TREE_REMOVAL_TIP                 },
     { WWT_CHECKBOX,         1,  8,      391,    116,    127,    STR_FORBID_LANDSCAPE_CHANGES,           STR_FORBID_LANDSCAPE_CHANGES_TIP            },
     { WWT_CHECKBOX,         1,  8,      391,    133,    144,    STR_FORBID_HIGH_CONSTRUCTION,           STR_FORBID_HIGH_CONSTRUCTION_TIP            },
@@ -200,7 +175,7 @@ static void window_editor_scenario_options_guests_paint(rct_window *w, rct_drawp
 static void window_editor_scenario_options_park_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_editor_scenario_options_park_resize(rct_window *w);
 static void window_editor_scenario_options_park_mousedown(rct_window *w, rct_widgetindex widgetIndex, rct_widget *widget);
-static void window_editor_scenario_options_park_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex);
+static void window_editor_scenario_options_park_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
 static void window_editor_scenario_options_park_update(rct_window *w);
 static void window_editor_scenario_options_park_invalidate(rct_window *w);
 static void window_editor_scenario_options_park_paint(rct_window *w, rct_drawpixelinfo *dpi);
@@ -317,7 +292,7 @@ static rct_window_event_list *window_editor_scenario_options_page_events[] = {
     (1ULL << WIDX_TAB_2) |\
     (1ULL << WIDX_TAB_3)
 
-static uint64 window_editor_scenario_options_page_enabled_widgets[] = {
+static uint64_t window_editor_scenario_options_page_enabled_widgets[] = {
     ALWAYS_ENABLED_WIDGETS |
         (1ULL << WIDX_NO_MONEY) |
         (1ULL << WIDX_INITIAL_CASH_INCREASE) |
@@ -356,7 +331,7 @@ static uint64 window_editor_scenario_options_page_enabled_widgets[] = {
         (1ULL << WIDX_HARD_GUEST_GENERATION)
 };
 
-static uint32 window_editor_scenario_options_page_hold_down_widgets[] = {
+static uint32_t window_editor_scenario_options_page_hold_down_widgets[] = {
     (1ULL << WIDX_INITIAL_CASH_INCREASE) |
         (1ULL << WIDX_INITIAL_CASH_DECREASE) |
         (1ULL << WIDX_INITIAL_LOAN_INCREASE) |
@@ -380,6 +355,7 @@ static uint32 window_editor_scenario_options_page_hold_down_widgets[] = {
         (1ULL << WIDX_ENTRY_PRICE_INCREASE) |
         (1ULL << WIDX_ENTRY_PRICE_DECREASE)
 };
+// clang-format on
 
 #pragma endregion
 
@@ -414,7 +390,7 @@ rct_window * window_editor_scenario_options_open()
 
 static void window_editor_scenario_options_set_pressed_tab(rct_window *w)
 {
-    sint32 i;
+    int32_t i;
     for (i = 0; i < WINDOW_EDITOR_SCENARIO_OPTIONS_PAGE_COUNT; i++)
         w->pressed_widgets &= ~(1 << (WIDX_TAB_1 + i));
     w->pressed_widgets |= 1LL << (WIDX_TAB_1 + w->page);
@@ -438,7 +414,7 @@ static void window_editor_scenario_options_anchor_border_widgets(rct_window *w)
 static void window_editor_scenario_options_draw_tab_images(rct_window *w, rct_drawpixelinfo *dpi)
 {
     rct_widget *widget;
-    sint32 spriteIndex;
+    int32_t spriteIndex;
 
     // Tab 1
     widget = &w->widgets[WIDX_TAB_1];
@@ -466,7 +442,7 @@ static void window_editor_scenario_options_draw_tab_images(rct_window *w, rct_dr
  *
  *  rct2: 0x00668496
  */
-static void window_editor_scenario_options_set_page(rct_window *w, sint32 page)
+static void window_editor_scenario_options_set_page(rct_window *w, int32_t page)
 {
     if (w->page == page)
         return;
@@ -504,7 +480,7 @@ static void window_editor_scenario_options_financial_mouseup(rct_window *w, rct_
         break;
     case WIDX_NO_MONEY:
     {
-        sint32 newMoneySetting;
+        int32_t newMoneySetting;
 
         if (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR)
         {
@@ -734,22 +710,22 @@ static void window_editor_scenario_options_financial_invalidate(rct_window *w)
     if (((gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && (gParkFlags & PARK_FLAGS_NO_MONEY_SCENARIO)) ||
         (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && (gParkFlags & PARK_FLAGS_NO_MONEY))) {
         w->pressed_widgets |= (1 << WIDX_NO_MONEY);
-        for (sint32 i = WIDX_INITIAL_CASH; i <= WIDX_FORBID_MARKETING; i++)
+        for (int32_t i = WIDX_INITIAL_CASH; i <= WIDX_FORBID_MARKETING; i++)
             w->widgets[i].type = WWT_EMPTY;
     } else {
         w->pressed_widgets &= ~(1 << WIDX_NO_MONEY);
         w->widgets[WIDX_INITIAL_CASH].type = WWT_SPINNER;
-        w->widgets[WIDX_INITIAL_CASH_INCREASE].type = WWT_DROPDOWN_BUTTON;
-        w->widgets[WIDX_INITIAL_CASH_DECREASE].type = WWT_DROPDOWN_BUTTON;
+        w->widgets[WIDX_INITIAL_CASH_INCREASE].type = WWT_BUTTON;
+        w->widgets[WIDX_INITIAL_CASH_DECREASE].type = WWT_BUTTON;
         w->widgets[WIDX_INITIAL_LOAN].type = WWT_SPINNER;
-        w->widgets[WIDX_INITIAL_LOAN_INCREASE].type =  WWT_DROPDOWN_BUTTON;
-        w->widgets[WIDX_INITIAL_LOAN_DECREASE].type =  WWT_DROPDOWN_BUTTON;
+        w->widgets[WIDX_INITIAL_LOAN_INCREASE].type =  WWT_BUTTON;
+        w->widgets[WIDX_INITIAL_LOAN_DECREASE].type =  WWT_BUTTON;
         w->widgets[WIDX_MAXIMUM_LOAN].type = WWT_SPINNER;
-        w->widgets[WIDX_MAXIMUM_LOAN_INCREASE].type =  WWT_DROPDOWN_BUTTON;
-        w->widgets[WIDX_MAXIMUM_LOAN_DECREASE].type =  WWT_DROPDOWN_BUTTON;
+        w->widgets[WIDX_MAXIMUM_LOAN_INCREASE].type =  WWT_BUTTON;
+        w->widgets[WIDX_MAXIMUM_LOAN_DECREASE].type =  WWT_BUTTON;
         w->widgets[WIDX_INTEREST_RATE].type = WWT_SPINNER;
-        w->widgets[WIDX_INTEREST_RATE_INCREASE].type =  WWT_DROPDOWN_BUTTON;
-        w->widgets[WIDX_INTEREST_RATE_DECREASE].type =  WWT_DROPDOWN_BUTTON;
+        w->widgets[WIDX_INTEREST_RATE_INCREASE].type =  WWT_BUTTON;
+        w->widgets[WIDX_INTEREST_RATE_DECREASE].type =  WWT_BUTTON;
         w->widgets[WIDX_FORBID_MARKETING].type = WWT_CHECKBOX;
     }
 
@@ -769,7 +745,7 @@ static void window_editor_scenario_options_financial_invalidate(rct_window *w)
  */
 static void window_editor_scenario_options_financial_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
-    sint32 x, y;
+    int32_t x, y;
 
     window_draw_widgets(w, dpi);
     window_editor_scenario_options_draw_tab_images(w, dpi);
@@ -812,7 +788,7 @@ static void window_editor_scenario_options_financial_paint(rct_window *w, rct_dr
         x = w->x + w->widgets[WIDX_INTEREST_RATE].left + 1;
         y = w->y + w->widgets[WIDX_INTEREST_RATE].top;
 
-        sint16 interestRate = Math::Clamp<sint16>(INT16_MIN, (sint16)gBankLoanInterestRate, INT16_MAX);
+        int16_t interestRate = Math::Clamp<int16_t>(INT16_MIN, (int16_t)gBankLoanInterestRate, INT16_MAX);
         gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &interestRate, COLOUR_BLACK, x, y);
     }
 }
@@ -1044,8 +1020,8 @@ static void window_editor_scenario_options_guests_invalidate(rct_window *w)
         w->widgets[WIDX_CASH_PER_GUEST_DECREASE].type = WWT_EMPTY;
     } else {
         w->widgets[WIDX_CASH_PER_GUEST].type = WWT_SPINNER;
-        w->widgets[WIDX_CASH_PER_GUEST_INCREASE].type = WWT_DROPDOWN_BUTTON;
-        w->widgets[WIDX_CASH_PER_GUEST_DECREASE].type = WWT_DROPDOWN_BUTTON;
+        w->widgets[WIDX_CASH_PER_GUEST_INCREASE].type = WWT_BUTTON;
+        w->widgets[WIDX_CASH_PER_GUEST_DECREASE].type = WWT_BUTTON;
     }
 
     // Guests prefer less intense rides checkbox
@@ -1071,7 +1047,7 @@ static void window_editor_scenario_options_guests_invalidate(rct_window *w)
  */
 static void window_editor_scenario_options_guests_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
-    sint32 x, y, arg;
+    int32_t x, y, arg;
 
     window_draw_widgets(w, dpi);
     window_editor_scenario_options_draw_tab_images(w, dpi);
@@ -1288,7 +1264,7 @@ static void window_editor_scenario_options_park_mousedown(rct_window *w, rct_wid
         window_invalidate(w);
         break;
     case WIDX_ENTRY_PRICE_INCREASE:
-        if (gParkEntranceFee < MONEY(100,00)) {
+        if (gParkEntranceFee < MAX_ENTRANCE_FEE) {
             game_do_command(
                 0,
                 GAME_COMMAND_FLAG_APPLY,
@@ -1355,7 +1331,7 @@ static void window_editor_scenario_options_park_mousedown(rct_window *w, rct_wid
  *
  *  rct2: 0x00671060
  */
-static void window_editor_scenario_options_park_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex)
+static void window_editor_scenario_options_park_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex)
 {
     if (widgetIndex == WIDX_PAY_FOR_PARK_OR_RIDES_DROPDOWN && dropdownIndex != -1) {
         game_do_command(
@@ -1388,7 +1364,7 @@ static void window_editor_scenario_options_park_update(rct_window *w)
  */
 static void window_editor_scenario_options_park_invalidate(rct_window *w)
 {
-    uint64 pressedWidgets;
+    uint64_t pressedWidgets;
 
     rct_widget *widgets = window_editor_scenario_options_widgets[w->page];
     if (w->widgets != widgets) {
@@ -1400,19 +1376,19 @@ static void window_editor_scenario_options_park_invalidate(rct_window *w)
 
     if (((gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && (gParkFlags & PARK_FLAGS_NO_MONEY_SCENARIO)) ||
         (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && (gParkFlags & PARK_FLAGS_NO_MONEY))) {
-        for (sint32 i = WIDX_LAND_COST; i <= WIDX_ENTRY_PRICE_DECREASE; i++)
+        for (int32_t i = WIDX_LAND_COST; i <= WIDX_ENTRY_PRICE_DECREASE; i++)
             w->widgets[i].type = WWT_EMPTY;
     }
     else
     {
         w->widgets[WIDX_LAND_COST].type = WWT_SPINNER;
-        w->widgets[WIDX_LAND_COST_INCREASE].type = WWT_DROPDOWN_BUTTON;
-        w->widgets[WIDX_LAND_COST_DECREASE].type = WWT_DROPDOWN_BUTTON;
+        w->widgets[WIDX_LAND_COST_INCREASE].type = WWT_BUTTON;
+        w->widgets[WIDX_LAND_COST_DECREASE].type = WWT_BUTTON;
         w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST].type = WWT_SPINNER;
-        w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST_INCREASE].type = WWT_DROPDOWN_BUTTON;
-        w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST_DECREASE].type = WWT_DROPDOWN_BUTTON;
+        w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST_INCREASE].type = WWT_BUTTON;
+        w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST_DECREASE].type = WWT_BUTTON;
         w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES].type = WWT_DROPDOWN;
-        w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES_DROPDOWN].type = WWT_DROPDOWN_BUTTON;
+        w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES_DROPDOWN].type = WWT_BUTTON;
 
         if (!park_entry_price_unlocked())
         {
@@ -1423,8 +1399,8 @@ static void window_editor_scenario_options_park_invalidate(rct_window *w)
         else
         {
             w->widgets[WIDX_ENTRY_PRICE].type = WWT_SPINNER;
-            w->widgets[WIDX_ENTRY_PRICE_INCREASE].type = WWT_DROPDOWN_BUTTON;
-            w->widgets[WIDX_ENTRY_PRICE_DECREASE].type = WWT_DROPDOWN_BUTTON;
+            w->widgets[WIDX_ENTRY_PRICE_INCREASE].type = WWT_BUTTON;
+            w->widgets[WIDX_ENTRY_PRICE_DECREASE].type = WWT_BUTTON;
         }
     }
 
@@ -1460,7 +1436,7 @@ static void window_editor_scenario_options_park_invalidate(rct_window *w)
  */
 static void window_editor_scenario_options_park_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
-    sint32 x, y, arg;
+    int32_t x, y, arg;
     rct_string_id stringId;
 
     window_draw_widgets(w, dpi);

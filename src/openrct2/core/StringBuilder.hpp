@@ -1,21 +1,15 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #pragma once
 
+#include <algorithm>
 #include "../common.h"
 
 #include "Math.hpp"
@@ -40,7 +34,7 @@ public:
         Memory::Free(_buffer);
     }
 
-    void Append(sint32 codepoint)
+    void Append(int32_t codepoint)
     {
         Append((codepoint_t)codepoint);
     }
@@ -75,7 +69,7 @@ public:
     void Append(const utf8 * text, size_t textLength)
     {
         EnsureCapacity(_length + textLength + 1);
-        Memory::Copy(_buffer + _length, text, textLength);
+        std::copy_n(text, textLength, _buffer + _length);
         _length += textLength;
         _buffer[_length] = 0;
     }
@@ -133,7 +127,7 @@ public:
     {
         // If buffer is null, length should be 0 which will create a new one byte memory block containing a null terminator
         utf8 * result = Memory::AllocateArray<utf8>(_length + 1);
-        Memory::CopyArray(result, _buffer, _length);
+        std::copy_n(_buffer, _length, result);
         result[_length] = 0;
         return result;
     }
@@ -168,7 +162,7 @@ private:
     {
         if (_capacity > capacity) return;
 
-        _capacity = Math::Max((size_t)8, _capacity);
+        _capacity = std::max((size_t)8, _capacity);
         while (_capacity < capacity)
         {
             _capacity *= 2;

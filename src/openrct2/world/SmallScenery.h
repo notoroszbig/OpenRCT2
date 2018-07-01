@@ -1,28 +1,19 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
+
+#pragma once
 
 #include "../common.h"
-#include "map.h"
-#include "scenery.h"
+#include "Map.h"
+#include "Scenery.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef enum
+enum SMALL_SCENERY_FLAGS
 {
     SMALL_SCENERY_FLAG_FULL_TILE            = (1 << 0),  // 0x1
     SMALL_SCENERY_FLAG_VOFFSET_CENTRE       = (1 << 1),  // 0x2
@@ -52,18 +43,18 @@ typedef enum
     SMALL_SCENERY_FLAG_THREE_QUARTERS       = (1 << 25), // 0x2000000
     SMALL_SCENERY_FLAG_PAINT_SUPPORTS       = (1 << 26), // 0x4000000; used for scenery items which are support structures
     SMALL_SCENERY_FLAG27                    = (1 << 27), // 0x8000000
-}
-SMALL_SCENERY_FLAGS;
+};
 
-sint32 scenery_small_get_primary_colour(const rct_tile_element * tileElement);
-sint32 scenery_small_get_secondary_colour(const rct_tile_element * tileElement);
-void scenery_small_set_primary_colour(rct_tile_element * tileElement, uint32 colour);
-void scenery_small_set_secondary_colour(rct_tile_element * tileElement, uint32 colour);
+enum
+{
+    MAP_ELEM_SMALL_SCENERY_COLOUR_FLAG_NEEDS_SUPPORTS = (1 << 5),
+};
+
+int32_t scenery_small_get_primary_colour(const rct_tile_element * tileElement);
+int32_t scenery_small_get_secondary_colour(const rct_tile_element * tileElement);
+void scenery_small_set_primary_colour(rct_tile_element * tileElement, uint32_t colour);
+void scenery_small_set_secondary_colour(rct_tile_element * tileElement, uint32_t colour);
 bool scenery_small_get_supports_needed(const rct_tile_element * tileElement);
 void scenery_small_set_supports_needed(rct_tile_element * tileElement);
 
-bool scenery_small_entry_has_flag(const rct_scenery_entry * sceneryEntry, uint32 flags);
-
-#ifdef __cplusplus
-}
-#endif
+bool scenery_small_entry_has_flag(const rct_scenery_entry * sceneryEntry, uint32_t flags);

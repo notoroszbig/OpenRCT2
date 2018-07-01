@@ -1,34 +1,17 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #ifndef DISABLE_NETWORK
 
 #include "NetworkTypes.h"
 #include "NetworkAction.h"
 #include "NetworkGroup.h"
-#include "../core/Exception.hpp"
-
-NetworkGroup::NetworkGroup()
-{
-    ActionsAllowed = { 0 };
-}
-
-NetworkGroup::~NetworkGroup()
-{
-}
 
 NetworkGroup NetworkGroup::FromJson(const json_t * json)
 {
@@ -39,10 +22,10 @@ NetworkGroup NetworkGroup::FromJson(const json_t * json)
 
     if (jsonId == nullptr || jsonName == nullptr || jsonPermissions == nullptr)
     {
-        throw Exception("Missing group data");
+        throw std::runtime_error("Missing group data");
     }
 
-    group.Id    = (uint8)json_integer_value(jsonId);
+    group.Id    = (uint8_t)json_integer_value(jsonId);
     group._name = std::string(json_string_value(jsonName));
     std::fill(group.ActionsAllowed.begin(), group.ActionsAllowed.end(), 0);
 
@@ -53,7 +36,7 @@ NetworkGroup NetworkGroup::FromJson(const json_t * json)
         if (perm_name == nullptr) {
             continue;
         }
-        sint32 action_id = NetworkActions::FindCommandByPermissionName(perm_name);
+        int32_t action_id = NetworkActions::FindCommandByPermissionName(perm_name);
         if (action_id != -1) {
             group.ToggleActionPermission(action_id);
         }
@@ -93,7 +76,7 @@ void NetworkGroup::Read(NetworkPacket &packet)
 {
     packet >> Id;
     SetName(packet.ReadString());
-    for (auto action : ActionsAllowed)
+    for (auto &action : ActionsAllowed)
     {
         packet >> action;
     }
@@ -103,9 +86,9 @@ void NetworkGroup::Write(NetworkPacket &packet)
 {
     packet << Id;
     packet.WriteString(GetName().c_str());
-    for (size_t i = 0; i < ActionsAllowed.size(); i++)
+    for (const auto &action : ActionsAllowed)
     {
-        packet << ActionsAllowed[i];
+        packet << action;
     }
 }
 
@@ -131,9 +114,9 @@ bool NetworkGroup::CanPerformAction(size_t index) const
     return (ActionsAllowed[byte] & (1 << bit)) != 0;
 }
 
-bool NetworkGroup::CanPerformCommand(sint32 command) const
+bool NetworkGroup::CanPerformCommand(int32_t command) const
 {
-    sint32 action = NetworkActions::FindCommand(command);
+    int32_t action = NetworkActions::FindCommand(command);
     if (action != -1)
     {
         return CanPerformAction(action);

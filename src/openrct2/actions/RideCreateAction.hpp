@@ -1,34 +1,30 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #pragma once
 
+#include <algorithm>
 #include "../core/Memory.hpp"
 #include "../core/MemoryStream.h"
-#include "../localisation/string_ids.h"
+#include "../localisation/StringIds.h"
 #include "GameAction.h"
 
-#include "../localisation/date.h"
+#include "../localisation/Date.h"
 #include "../Cheats.h"
-#include "../interface/window.h"
-#include "../world/park.h"
-#include "../rct1.h"
-#include "../ride/ride_data.h"
-#include "../ride/ride.h"
+#include "../interface/Window.h"
+#include "../world/Park.h"
+#include "../rct1/RCT1.h"
+#include "../ride/RideData.h"
+#include "../ride/Ride.h"
+#include "../ride/ShopItem.h"
 #include "../ride/Station.h"
+#include "../scenario/Scenario.h"
 
 class RideCreateGameActionResult final : public GameActionResult
 {
@@ -36,20 +32,20 @@ public:
     RideCreateGameActionResult() : GameActionResult(GA_ERROR::OK, 0) {}
     RideCreateGameActionResult(GA_ERROR error, rct_string_id message) : GameActionResult(error, message) {}
 
-    sint32 rideIndex = -1;
+    int32_t rideIndex = -1;
 };
 
 struct RideCreateAction : public GameActionBase<GAME_COMMAND_CREATE_RIDE, RideCreateGameActionResult>
 {
 private:
-    sint32 _rideType;
-    sint32 _subType;
-    uint8 _colour1;
-    uint8 _colour2;
+    int32_t _rideType;
+    int32_t _subType;
+    uint8_t _colour1;
+    uint8_t _colour2;
 
 public:
     RideCreateAction() {}
-    RideCreateAction(sint32 rideType, sint32 subType, sint32 colour1, sint32 colour2) :
+    RideCreateAction(int32_t rideType, int32_t subType, int32_t colour1, int32_t colour2) :
         _rideType(rideType),
         _subType(subType),
         _colour1(colour1),
@@ -57,7 +53,7 @@ public:
     {
     }
 
-    uint16 GetActionFlags() const override
+    uint16_t GetActionFlags() const override
     {
         return GameAction::GetActionFlags() | GA_FLAGS::ALLOW_WHILE_PAUSED;;
     }
@@ -71,11 +67,11 @@ public:
 
     GameActionResult::Ptr Query() const override
     {
-        sint32 rideIndex = ride_get_empty_slot();
+        int32_t rideIndex = ride_get_empty_slot();
         if (rideIndex == -1)
         {
             // No more free slots available.
-            return std::make_unique<RideCreateGameActionResult>(GA_ERROR::NO_FREE_ELEMENTS, STR_NONE);
+            return std::make_unique<RideCreateGameActionResult>(GA_ERROR::NO_FREE_ELEMENTS, STR_TOO_MANY_RIDES);
         }
 
         if (_rideType >= RIDE_TYPE_COUNT)
@@ -83,7 +79,7 @@ public:
             return std::make_unique<RideCreateGameActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_INVALID_RIDE_TYPE);
         }
 
-        sint32 rideEntryIndex = ride_get_entry_index(_rideType, _subType);
+        int32_t rideEntryIndex = ride_get_entry_index(_rideType, _subType);
         if (rideEntryIndex >= 128)
         {
             return std::make_unique<RideCreateGameActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_INVALID_RIDE_TYPE);
@@ -114,8 +110,8 @@ public:
         rct_ride_entry * rideEntry;
         auto res = std::make_unique<RideCreateGameActionResult>();
 
-        sint32 rideEntryIndex = ride_get_entry_index(_rideType, _subType);
-        sint32 rideIndex = ride_get_empty_slot();
+        int32_t rideEntryIndex = ride_get_entry_index(_rideType, _subType);
+        int32_t rideIndex = ride_get_empty_slot();
 
         res->rideIndex = rideIndex;
 
@@ -144,11 +140,11 @@ public:
             ride_set_name_to_default(ride, rideEntry);
         }
 
-        for (size_t i = 0; i < MAX_STATIONS; i++)
+        for (int32_t i = 0; i < MAX_STATIONS; i++)
         {
             ride->station_starts[i].xy = RCT_XY8_UNDEFINED;
-            ride->entrances[i].xy = RCT_XY8_UNDEFINED;
-            ride->exits[i].xy = RCT_XY8_UNDEFINED;
+            ride_clear_entrance_location(ride, i);
+            ride_clear_exit_location(ride, i);
             ride->train_at_station[i] = 255;
             ride->queue_time[i] = 0;
         }
@@ -262,7 +258,10 @@ public:
             }
         }
 
-        Memory::Set(ride->num_customers, 0, sizeof(ride->num_customers));
+        std::fill(
+            std::begin(ride->num_customers),
+            std::end(ride->num_customers),
+            0);
         ride->value = 0xFFFF;
         ride->satisfaction = 255;
         ride->satisfaction_time_out = 0;

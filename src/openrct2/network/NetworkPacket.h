@@ -1,22 +1,13 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #pragma once
-
-#ifdef __cplusplus
 
 #include <memory>
 #include <vector>
@@ -27,24 +18,24 @@
 class NetworkPacket final
 {
 public:
-    uint16                              Size = 0;
-    std::shared_ptr<std::vector<uint8>> Data = std::make_shared<std::vector<uint8>>();
+    uint16_t                              Size = 0;
+    std::shared_ptr<std::vector<uint8_t>> Data = std::make_shared<std::vector<uint8_t>>();
     size_t                              BytesTransferred = 0;
     size_t                              BytesRead = 0;
 
     static std::unique_ptr<NetworkPacket> Allocate();
     static std::unique_ptr<NetworkPacket> Duplicate(NetworkPacket& packet);
 
-    uint8 * GetData();
-    uint32  GetCommand();
+    uint8_t * GetData();
+    int32_t  GetCommand();
 
     void Clear();
     bool CommandRequiresAuth();
 
-    const uint8 * Read(size_t size);
+    const uint8_t * Read(size_t size);
     const utf8 *  ReadString();
 
-    void Write(const uint8 * bytes, size_t size);
+    void Write(const uint8_t * bytes, size_t size);
     void WriteString(const utf8 * string);
 
     template <typename T>
@@ -65,7 +56,7 @@ public:
     template <typename T>
     NetworkPacket & operator <<(T value) {
         T swapped = ByteSwapBE(value);
-        uint8 * bytes = (uint8 *)&swapped;
+        uint8_t * bytes = (uint8_t *)&swapped;
         Data->insert(Data->end(), bytes, bytes + sizeof(value));
         return *this;
     }
@@ -76,5 +67,3 @@ public:
         return *this;
     }
 };
-
-#endif

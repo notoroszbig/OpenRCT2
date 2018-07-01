@@ -1,48 +1,46 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
-#include <openrct2/OpenRCT2.h>
-#include <openrct2/world/Climate.h>
+#include <openrct2-ui/interface/Dropdown.h>
 #include <openrct2-ui/windows/Window.h>
-#include <openrct2/Context.h>
 
+#include <openrct2/actions/ParkSetNameAction.hpp>
+#include <openrct2/Context.h>
+#include <openrct2/core/Util.hpp>
 #include <openrct2/Game.h>
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/date.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Date.h>
+#include <openrct2/localisation/Localisation.h>
+#include <openrct2/OpenRCT2.h>
 #include <openrct2/sprites.h>
 #include <openrct2/util/Util.h>
-#include <openrct2-ui/interface/Dropdown.h>
+#include <openrct2/world/Climate.h>
+#include <openrct2/scenario/Scenario.h>
+#include <openrct2/world/Park.h>
 
 #pragma region Widgets
 
+// clang-format off
 enum {
     WINDOW_EDITOR_OBJECTIVE_OPTIONS_PAGE_MAIN,
     WINDOW_EDITOR_OBJECTIVE_OPTIONS_PAGE_RIDES,
     WINDOW_EDITOR_OBJECTIVE_OPTIONS_PAGE_COUNT
 };
 
-static const rct_string_id ClimateNames[] = {
+static constexpr const rct_string_id ClimateNames[] = {
     STR_CLIMATE_COOL_AND_WET,
     STR_CLIMATE_WARM,
     STR_CLIMATE_HOT_AND_DRY,
     STR_CLIMATE_COLD,
 };
 
-static const rct_string_id ObjectiveDropdownOptionNames[] = {
+static constexpr const rct_string_id ObjectiveDropdownOptionNames[] = {
     STR_OBJECTIVE_DROPDOWN_NONE,
     STR_OBJECTIVE_DROPDOWN_NUMBER_OF_GUESTS_AT_A_GIVEN_DATE,
     STR_OBJECTIVE_DROPDOWN_PARK_VALUE_AT_A_GIVEN_DATE,
@@ -95,20 +93,16 @@ enum {
 static rct_widget window_editor_objective_options_main_widgets[] = {
     MAIN_OBJECTIVE_OPTIONS_WIDGETS,
     { WWT_DROPDOWN,         1,  98,     441,    48,     59,     STR_NONE,                   STR_SELECT_OBJECTIVE_FOR_THIS_SCENARIO_TIP          },
-    { WWT_DROPDOWN_BUTTON,  1,  430,    440,    49,     58,     STR_DROPDOWN_GLYPH,         STR_SELECT_OBJECTIVE_FOR_THIS_SCENARIO_TIP          },
-    { WWT_SPINNER,          1,  158,    237,    65,     76,     STR_NONE,                   STR_NONE                                            },
-    { WWT_DROPDOWN_BUTTON,  1,  226,    236,    66,     70,     STR_NUMERIC_UP,             STR_NONE                                            },
-    { WWT_DROPDOWN_BUTTON,  1,  226,    236,    71,     75,     STR_NUMERIC_DOWN,           STR_NONE                                            },
-    { WWT_SPINNER,          1,  158,    277,    82,     93,     STR_NONE,                   STR_NONE                                            },
-    { WWT_DROPDOWN_BUTTON,  1,  266,    276,    83,     87,     STR_NUMERIC_UP,             STR_NONE                                            },
-    { WWT_DROPDOWN_BUTTON,  1,  266,    276,    88,     92,     STR_NUMERIC_DOWN,           STR_NONE                                            },
+    { WWT_BUTTON,           1,  430,    440,    49,     58,     STR_DROPDOWN_GLYPH,         STR_SELECT_OBJECTIVE_FOR_THIS_SCENARIO_TIP          },
+      SPINNER_WIDGETS      (1,  158,    277,    65,     76,     STR_NONE,                   STR_NONE), // NB: 3 widgets
+      SPINNER_WIDGETS      (1,  158,    277,    82,     93,     STR_NONE,                   STR_NONE), // NB: 3 widgets
     { WWT_DROPDOWN,         1,  98,     277,    99,     110,    STR_NONE,                   STR_SELECT_CLIMATE_TIP                              },
-    { WWT_DROPDOWN_BUTTON,  1,  266,    276,    100,    109,    STR_DROPDOWN_GLYPH,         STR_SELECT_CLIMATE_TIP                              },
-    { WWT_DROPDOWN_BUTTON,  1,  370,    444,    116,    127,    STR_CHANGE,                 STR_CHANGE_NAME_OF_PARK_TIP                         },
-    { WWT_DROPDOWN_BUTTON,  1,  370,    444,    133,    144,    STR_CHANGE,                 STR_CHANGE_NAME_OF_SCENARIO_TIP                     },
+    { WWT_BUTTON,           1,  266,    276,    100,    109,    STR_DROPDOWN_GLYPH,         STR_SELECT_CLIMATE_TIP                              },
+    { WWT_BUTTON,           1,  370,    444,    116,    127,    STR_CHANGE,                 STR_CHANGE_NAME_OF_PARK_TIP                         },
+    { WWT_BUTTON,           1,  370,    444,    133,    144,    STR_CHANGE,                 STR_CHANGE_NAME_OF_SCENARIO_TIP                     },
     { WWT_DROPDOWN,         1,  98,     277,    150,    161,    STR_NONE,                   STR_SELECT_WHICH_GROUP_THIS_SCENARIO_APPEARS_IN     },
-    { WWT_DROPDOWN_BUTTON,  1,  266,    276,    151,    160,    STR_DROPDOWN_GLYPH,         STR_SELECT_WHICH_GROUP_THIS_SCENARIO_APPEARS_IN     },
-    { WWT_DROPDOWN_BUTTON,  1,  370,    444,    167,    178,    STR_CHANGE,                 STR_CHANGE_DETAIL_NOTES_ABOUT_PARK_SCENARIO_TIP     },
+    { WWT_BUTTON,           1,  266,    276,    151,    160,    STR_DROPDOWN_GLYPH,         STR_SELECT_WHICH_GROUP_THIS_SCENARIO_APPEARS_IN     },
+    { WWT_BUTTON,           1,  370,    444,    167,    178,    STR_CHANGE,                 STR_CHANGE_DETAIL_NOTES_ABOUT_PARK_SCENARIO_TIP     },
     { WIDGETS_END }
 };
 
@@ -130,7 +124,7 @@ static rct_widget *window_editor_objective_options_widgets[] = {
 static void window_editor_objective_options_main_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_editor_objective_options_main_resize(rct_window *w);
 static void window_editor_objective_options_main_mousedown(rct_window *w, rct_widgetindex widgetIndex, rct_widget* widget);
-static void window_editor_objective_options_main_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex);
+static void window_editor_objective_options_main_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
 static void window_editor_objective_options_main_update(rct_window *w);
 static void window_editor_objective_options_main_textinput(rct_window *w, rct_widgetindex widgetIndex, char *text);
 static void window_editor_objective_options_main_invalidate(rct_window *w);
@@ -139,12 +133,12 @@ static void window_editor_objective_options_main_paint(rct_window *w, rct_drawpi
 static void window_editor_objective_options_rides_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_editor_objective_options_rides_resize(rct_window *w);
 static void window_editor_objective_options_rides_update(rct_window *w);
-static void window_editor_objective_options_rides_scrollgetheight(rct_window *w, sint32 scrollIndex, sint32 *width, sint32 *height);
-static void window_editor_objective_options_rides_scrollmousedown(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y);
-static void window_editor_objective_options_rides_scrollmouseover(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y);
+static void window_editor_objective_options_rides_scrollgetheight(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height);
+static void window_editor_objective_options_rides_scrollmousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
+static void window_editor_objective_options_rides_scrollmouseover(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
 static void window_editor_objective_options_rides_invalidate(rct_window *w);
 static void window_editor_objective_options_rides_paint(rct_window *w, rct_drawpixelinfo *dpi);
-static void window_editor_objective_options_rides_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, sint32 scrollIndex);
+static void window_editor_objective_options_rides_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int32_t scrollIndex);
 
 // 0x009A9DF4
 static rct_window_event_list window_objective_options_main_events = {
@@ -219,7 +213,7 @@ static rct_window_event_list *window_editor_objective_options_page_events[] = {
 
 #pragma region Enabled widgets
 
-static uint64 window_editor_objective_options_page_enabled_widgets[] = {
+static uint64_t window_editor_objective_options_page_enabled_widgets[] = {
     (1 << WIDX_CLOSE) |
     (1 << WIDX_TAB_1) |
     (1 << WIDX_TAB_2) |
@@ -242,7 +236,7 @@ static uint64 window_editor_objective_options_page_enabled_widgets[] = {
     (1 << WIDX_TAB_2)
 };
 
-static uint64 window_editor_objective_options_page_hold_down_widgets[] = {
+static uint64_t window_editor_objective_options_page_hold_down_widgets[] = {
     (1 << WIDX_OBJECTIVE_ARG_1_INCREASE) |
     (1 << WIDX_OBJECTIVE_ARG_1_DECREASE) |
     (1 << WIDX_OBJECTIVE_ARG_2_INCREASE) |
@@ -250,6 +244,7 @@ static uint64 window_editor_objective_options_page_hold_down_widgets[] = {
 
     0
 };
+// clang-format on
 
 #pragma endregion
 
@@ -290,7 +285,7 @@ rct_window * window_editor_objective_options_open()
 
 static void window_editor_objective_options_set_pressed_tab(rct_window *w)
 {
-    sint32 i;
+    int32_t i;
     for (i = 0; i < 2; i++)
         w->pressed_widgets &= ~(1 << (WIDX_TAB_1 + i));
     w->pressed_widgets |= 1LL << (WIDX_TAB_1 + w->page);
@@ -310,7 +305,7 @@ static void window_editor_objective_options_anchor_border_widgets(rct_window *w)
 static void window_editor_objective_options_draw_tab_images(rct_window *w, rct_drawpixelinfo *dpi)
 {
     rct_widget *widget;
-    sint32 spriteIndex;
+    int32_t spriteIndex;
 
     // Tab 1
     widget = &w->widgets[WIDX_TAB_1];
@@ -336,7 +331,7 @@ static void window_editor_objective_options_draw_tab_images(rct_window *w, rct_d
  *
  *  rct2: 0x00668496
  */
-static void window_editor_objective_options_set_page(rct_window *w, sint32 page)
+static void window_editor_objective_options_set_page(rct_window *w, int32_t page)
 {
     if (w->page == page)
         return;
@@ -362,7 +357,7 @@ static void window_editor_objective_options_set_page(rct_window *w, sint32 page)
  *
  *  rct2: 0x0067201D
  */
-static void window_editor_objective_options_set_objective(rct_window *w, sint32 objective)
+static void window_editor_objective_options_set_objective(rct_window *w, int32_t objective)
 {
     gScenarioObjectiveType = objective;
     window_invalidate(w);
@@ -418,7 +413,7 @@ static void window_editor_objective_options_main_mouseup(rct_window *w, rct_widg
         window_editor_objective_options_set_page(w, widgetIndex - WIDX_TAB_1);
         break;
     case WIDX_PARK_NAME:
-        set_format_arg(16, uint32, gParkNameArgs);
+        set_format_arg(16, uint32_t, gParkNameArgs);
         window_text_input_open(w, WIDX_PARK_NAME, STR_PARK_NAME, STR_ENTER_PARK_NAME, gParkName, 0, 32);
         break;
     case WIDX_SCENARIO_NAME:
@@ -441,9 +436,9 @@ static void window_editor_objective_options_main_resize(rct_window *w)
 
 static void window_editor_objective_options_show_objective_dropdown(rct_window *w)
 {
-    sint32 numItems = 0, objectiveType;
+    int32_t numItems = 0, objectiveType;
     rct_widget *dropdownWidget;
-    uint32 parkFlags;
+    uint32_t parkFlags;
 
     dropdownWidget = &w->widgets[WIDX_OBJECTIVE];
     parkFlags = gParkFlags;
@@ -506,7 +501,7 @@ static void window_editor_objective_options_show_objective_dropdown(rct_window *
     );
 
     objectiveType = gScenarioObjectiveType;
-    for (sint32 j = 0; j < numItems; j++)
+    for (int32_t j = 0; j < numItems; j++)
     {
         if (gDropdownItemsArgs[j] - STR_OBJECTIVE_DROPDOWN_NONE == objectiveType)
         {
@@ -518,7 +513,7 @@ static void window_editor_objective_options_show_objective_dropdown(rct_window *
 
 static void window_editor_objective_options_show_climate_dropdown(rct_window *w)
 {
-    sint32 i;
+    int32_t i;
     rct_widget *dropdownWidget;
 
     dropdownWidget = &w->widgets[WIDX_CLIMATE];
@@ -542,7 +537,7 @@ static void window_editor_objective_options_show_climate_dropdown(rct_window *w)
 
 static void window_editor_objective_options_show_category_dropdown(rct_window *w)
 {
-    sint32 i;
+    int32_t i;
     rct_widget *dropdownWidget;
 
     dropdownWidget = &w->widgets[WIDX_CATEGORY];
@@ -715,9 +710,9 @@ static void window_editor_objective_options_main_mousedown(rct_window *w, rct_wi
  *
  *  rct2: 0x00671A54
  */
-static void window_editor_objective_options_main_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex)
+static void window_editor_objective_options_main_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex)
 {
-    uint8 newObjectiveType;
+    uint8_t newObjectiveType;
 
     if (dropdownIndex == -1)
         return;
@@ -725,19 +720,19 @@ static void window_editor_objective_options_main_dropdown(rct_window *w, rct_wid
     switch (widgetIndex) {
     case WIDX_OBJECTIVE_DROPDOWN:
         // TODO: Don't rely on string ID order
-        newObjectiveType = (uint8)(gDropdownItemsArgs[dropdownIndex] - STR_OBJECTIVE_DROPDOWN_NONE);
+        newObjectiveType = (uint8_t)(gDropdownItemsArgs[dropdownIndex] - STR_OBJECTIVE_DROPDOWN_NONE);
         if (gScenarioObjectiveType != newObjectiveType)
             window_editor_objective_options_set_objective(w, newObjectiveType);
         break;
     case WIDX_CLIMATE_DROPDOWN:
-        if (gClimate != (uint8)dropdownIndex) {
-            gClimate = (uint8)dropdownIndex;
+        if (gClimate != (uint8_t)dropdownIndex) {
+            gClimate = (uint8_t)dropdownIndex;
             window_invalidate(w);
         }
         break;
     case WIDX_CATEGORY_DROPDOWN:
-        if (gS6Info.category != (uint8)dropdownIndex) {
-            gS6Info.category = (uint8)dropdownIndex;
+        if (gS6Info.category != (uint8_t)dropdownIndex) {
+            gS6Info.category = (uint8_t)dropdownIndex;
             window_invalidate(w);
         }
         break;
@@ -750,8 +745,8 @@ static void window_editor_objective_options_main_dropdown(rct_window *w, rct_wid
  */
 static void window_editor_objective_options_main_update(rct_window *w)
 {
-    uint32 parkFlags;
-    uint8 objectiveType;
+    uint32_t parkFlags;
+    uint8_t objectiveType;
 
     w->frame_no++;
     window_event_invalidate_call(w);
@@ -791,27 +786,20 @@ static void window_editor_objective_options_main_textinput(rct_window *w, rct_wi
 
     switch (widgetIndex) {
     case WIDX_PARK_NAME:
-        park_set_name(text);
-
-        if (gS6Info.name[0] == 0)
-            format_string(gS6Info.name, 64, gParkName, &gParkNameArgs);
-        break;
-    case WIDX_SCENARIO_NAME:
-        safe_strcpy(gS6Info.name, text, 64);
-        if (strnlen(gS6Info.name, 64) == 64)
         {
-            gS6Info.name[64 - 1] = '\0';
-            log_warning("Truncated S6 name: %s", gS6Info.name);
+            auto action = ParkSetNameAction(text);
+            GameActions::Execute(&action);
+
+            if (gS6Info.name[0] == '\0')
+                format_string(gS6Info.name, 64, gParkName, &gParkNameArgs);
+            break;
         }
+    case WIDX_SCENARIO_NAME:
+        safe_strcpy(gS6Info.name, text, Util::CountOf(gS6Info.name));
         window_invalidate(w);
         break;
     case WIDX_DETAILS:
-        safe_strcpy(gS6Info.details, text, 256);
-        if (strnlen(gS6Info.details, 256) == 256)
-        {
-            gS6Info.details[256 - 1] = '\0';
-            log_warning("Truncated S6 name: %s", gS6Info.details);
-        }
+        safe_strcpy(gS6Info.details, text, Util::CountOf(gS6Info.details));
         window_invalidate(w);
         break;
     }
@@ -823,12 +811,7 @@ static void window_editor_objective_options_main_textinput(rct_window *w, rct_wi
  */
 static void window_editor_objective_options_main_invalidate(rct_window *w)
 {
-    rct_widget *widgets;
-    rct_stex_entry *stex;
-
-    stex = g_stexEntries[0];
-
-    widgets = window_editor_objective_options_widgets[w->page];
+    auto widgets = window_editor_objective_options_widgets[w->page];
     if (w->widgets != widgets) {
         w->widgets = widgets;
         window_init_scroll_widgets(w);
@@ -836,6 +819,7 @@ static void window_editor_objective_options_main_invalidate(rct_window *w)
 
     window_editor_objective_options_set_pressed_tab(w);
 
+    auto stex = (rct_stex_entry *)object_entry_get_chunk(OBJECT_TYPE_SCENARIO_TEXT, 0);
     if (stex == nullptr)
         w->disabled_widgets &= ~((1 << WIDX_PARK_NAME) | (1 << WIDX_SCENARIO_NAME));
     else
@@ -845,11 +829,11 @@ static void window_editor_objective_options_main_invalidate(rct_window *w)
     case OBJECTIVE_GUESTS_BY:
     case OBJECTIVE_PARK_VALUE_BY:
         window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1].type = WWT_SPINNER;
-        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1_INCREASE].type = WWT_DROPDOWN_BUTTON;
-        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1_DECREASE].type = WWT_DROPDOWN_BUTTON;
+        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1_INCREASE].type = WWT_BUTTON;
+        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1_DECREASE].type = WWT_BUTTON;
         window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_2].type = WWT_SPINNER;
-        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_2_INCREASE].type = WWT_DROPDOWN_BUTTON;
-        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_2_DECREASE].type = WWT_DROPDOWN_BUTTON;
+        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_2_INCREASE].type = WWT_BUTTON;
+        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_2_DECREASE].type = WWT_BUTTON;
         break;
     case OBJECTIVE_GUESTS_AND_RATING:
     case OBJECTIVE_MONTHLY_RIDE_INCOME:
@@ -858,8 +842,8 @@ static void window_editor_objective_options_main_invalidate(rct_window *w)
     case OBJECTIVE_REPLAY_LOAN_AND_PARK_VALUE:
     case OBJECTIVE_MONTHLY_FOOD_INCOME:
         window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1].type = WWT_SPINNER;
-        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1_INCREASE].type = WWT_DROPDOWN_BUTTON;
-        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1_DECREASE].type = WWT_DROPDOWN_BUTTON;
+        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1_INCREASE].type = WWT_BUTTON;
+        window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_1_DECREASE].type = WWT_BUTTON;
         window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_2].type = WWT_EMPTY;
         window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_2_INCREASE].type = WWT_EMPTY;
         window_editor_objective_options_main_widgets[WIDX_OBJECTIVE_ARG_2_DECREASE].type = WWT_EMPTY;
@@ -886,15 +870,12 @@ static void window_editor_objective_options_main_invalidate(rct_window *w)
  */
 static void window_editor_objective_options_main_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
-    rct_stex_entry *stex;
-    sint32 x, y, width;
+    int32_t x, y, width;
     rct_string_id stringId;
-    uint32 arg;
+    uint32_t arg;
 
     window_draw_widgets(w, dpi);
     window_editor_objective_options_draw_tab_images(w, dpi);
-
-    stex = g_stexEntries[0];
 
     // Objective label
     x = w->x + 8;
@@ -992,12 +973,13 @@ static void window_editor_objective_options_main_paint(rct_window *w, rct_drawpi
     y = w->y + w->widgets[WIDX_PARK_NAME].top;
     width = w->widgets[WIDX_PARK_NAME].left - 16;
 
+    auto stex = (rct_stex_entry *)object_entry_get_chunk(OBJECT_TYPE_SCENARIO_TEXT, 0);
     if (stex != nullptr) {
         set_format_arg(0, rct_string_id, stex->park_name);
     } else {
         set_format_arg(0, rct_string_id, gParkName);
     }
-    set_format_arg(2, uint32, gParkNameArgs);
+    set_format_arg(2, uint32_t, gParkNameArgs);
     gfx_draw_string_left_clipped(dpi, STR_WINDOW_PARK_NAME, gCommonFormatArgs, COLOUR_BLACK, x, y, width);
 
     // Scenario name
@@ -1007,7 +989,7 @@ static void window_editor_objective_options_main_paint(rct_window *w, rct_drawpi
 
     if (stex != nullptr) {
         set_format_arg(0, rct_string_id, stex->scenario_name);
-        set_format_arg(2, uint32, gParkNameArgs);
+        set_format_arg(2, uint32_t, gParkNameArgs);
     } else {
         set_format_arg(0, rct_string_id, STR_STRING);
         set_format_arg(2, const char *, gS6Info.name);
@@ -1027,7 +1009,7 @@ static void window_editor_objective_options_main_paint(rct_window *w, rct_drawpi
 
     if (stex != nullptr) {
         set_format_arg(0, rct_string_id, stex->details);
-        set_format_arg(2, uint32, gParkNameArgs);
+        set_format_arg(2, uint32_t, gParkNameArgs);
     } else {
         set_format_arg(0, rct_string_id, STR_STRING);
         set_format_arg(2, const char *, gS6Info.details);
@@ -1078,7 +1060,7 @@ static void window_editor_objective_options_rides_resize(rct_window *w)
  */
 static void window_editor_objective_options_rides_update(rct_window *w)
 {
-    sint32 i, numItems;
+    int32_t i, numItems;
     Ride *ride;
 
     w->frame_no++;
@@ -1104,7 +1086,7 @@ static void window_editor_objective_options_rides_update(rct_window *w)
  *
  *  rct2: 0x006724BF
  */
-static void window_editor_objective_options_rides_scrollgetheight(rct_window *w, sint32 scrollIndex, sint32 *width, sint32 *height)
+static void window_editor_objective_options_rides_scrollgetheight(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height)
 {
     *height = w->no_list_items * 12;
 }
@@ -1113,10 +1095,10 @@ static void window_editor_objective_options_rides_scrollgetheight(rct_window *w,
  *
  *  rct2: 0x006724FC
  */
-static void window_editor_objective_options_rides_scrollmousedown(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y)
+static void window_editor_objective_options_rides_scrollmousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y)
 {
     Ride *ride;
-    sint32 i;
+    int32_t i;
 
     i = y / 12;
     if (i < 0 || i >= w->no_list_items)
@@ -1131,9 +1113,9 @@ static void window_editor_objective_options_rides_scrollmousedown(rct_window *w,
  *
  *  rct2: 0x006724CC
  */
-static void window_editor_objective_options_rides_scrollmouseover(rct_window *w, sint32 scrollIndex, sint32 x, sint32 y)
+static void window_editor_objective_options_rides_scrollmouseover(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y)
 {
-    sint32 i;
+    int32_t i;
 
     i = y / 12;
     if (i < 0 || i >= w->no_list_items)
@@ -1182,16 +1164,16 @@ static void window_editor_objective_options_rides_paint(rct_window *w, rct_drawp
  *
  *  rct2: 0x0067236F
  */
-static void window_editor_objective_options_rides_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, sint32 scrollIndex)
+static void window_editor_objective_options_rides_scrollpaint(rct_window *w, rct_drawpixelinfo *dpi, int32_t scrollIndex)
 {
     rct_string_id stringId;
     Ride *ride;
 
-    sint32 colour = ColourMapA[w->colours[1]].mid_light;
+    int32_t colour = ColourMapA[w->colours[1]].mid_light;
     gfx_fill_rect(dpi, dpi->x, dpi->y, dpi->x + dpi->width - 1, dpi->y + dpi->height - 1, colour);
 
-    for (sint32 i = 0; i < w->no_list_items; i++) {
-        sint32 y = i * 12;
+    for (int32_t i = 0; i < w->no_list_items; i++) {
+        int32_t y = i * 12;
 
         if (y + 12 < dpi->y || y >= dpi->y + dpi->height)
             continue;
@@ -1226,7 +1208,7 @@ static void window_editor_objective_options_rides_scrollpaint(rct_window *w, rct
 static void window_editor_objective_options_update_disabled_widgets(rct_window *w)
 {
     Ride *ride;
-    sint32 i, numRides;
+    int32_t i, numRides;
 
     // Check if there are any rides (not shops or facilities)
     numRides = 0;

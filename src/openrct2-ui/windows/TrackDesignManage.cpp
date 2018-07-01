@@ -1,30 +1,25 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/Context.h>
 #include <openrct2/ride/TrackDesignRepository.h>
 #include <openrct2/core/Math.hpp>
 #include <openrct2-ui/windows/Window.h>
 
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2/util/Util.h>
+#include <openrct2/drawing/Drawing.h>
 
 #pragma region Widgets
 
+// clang-format off
 enum {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -40,8 +35,8 @@ static rct_widget window_track_manage_widgets[] = {
     { WWT_FRAME,            0,  0,      249,    0,      43,     STR_NONE,                   STR_NONE                },
     { WWT_CAPTION,          0,  1,      248,    1,      14,     STR_STRING,                     STR_WINDOW_TITLE_TIP    },
     { WWT_CLOSEBOX,         0,  237,    247,    2,      13,     STR_CLOSE_X,                STR_CLOSE_WINDOW_TIP    },
-    { WWT_DROPDOWN_BUTTON,  0,  10,     119,    24,     35,     STR_TRACK_MANAGE_RENAME,    STR_NONE                },
-    { WWT_DROPDOWN_BUTTON,  0,  130,    239,    24,     35,     STR_TRACK_MANAGE_DELETE,    STR_NONE                },
+    { WWT_BUTTON,           0,  10,     119,    24,     35,     STR_TRACK_MANAGE_RENAME,    STR_NONE                },
+    { WWT_BUTTON,           0,  130,    239,    24,     35,     STR_TRACK_MANAGE_DELETE,    STR_NONE                },
     { WIDGETS_END }
 };
 
@@ -49,8 +44,8 @@ static rct_widget window_track_delete_prompt_widgets[] = {
     { WWT_FRAME,            0,  0,      249,    0,      73,     STR_NONE,                   STR_NONE                },
     { WWT_CAPTION,          0,  1,      248,    1,      14,     STR_DELETE_FILE,            STR_WINDOW_TITLE_TIP    },
     { WWT_CLOSEBOX,         0,  237,    247,    2,      13,     STR_CLOSE_X,                STR_CLOSE_WINDOW_TIP    },
-    { WWT_DROPDOWN_BUTTON,  0,  10,     119,    54,     65,     STR_TRACK_MANAGE_DELETE,    STR_NONE                },
-    { WWT_DROPDOWN_BUTTON,  0,  130,    239,    54,     65,     STR_CANCEL,                 STR_NONE                },
+    { WWT_BUTTON,           0,  10,     119,    54,     65,     STR_TRACK_MANAGE_DELETE,    STR_NONE                },
+    { WWT_BUTTON,           0,  130,    239,    54,     65,     STR_CANCEL,                 STR_NONE                },
     { WIDGETS_END }
 };
 
@@ -129,6 +124,7 @@ static rct_window_event_list window_track_delete_prompt_events = {
     window_track_delete_prompt_paint,
     nullptr
 };
+// clang-format on
 
 #pragma endregion
 
@@ -254,10 +250,10 @@ static void window_track_delete_prompt_open()
 {
     window_close_by_class(WC_TRACK_DELETE_PROMPT);
 
-    sint32 screenWidth = context_get_width();
-    sint32 screenHeight = context_get_height();
+    int32_t screenWidth = context_get_width();
+    int32_t screenHeight = context_get_height();
     rct_window *w = window_create(
-        Math::Max(TOP_TOOLBAR_HEIGHT + 1, (screenWidth - 250) / 2),
+        std::max(TOP_TOOLBAR_HEIGHT + 1, (screenWidth - 250) / 2),
         (screenHeight - 44) / 2,
         250,
         74,

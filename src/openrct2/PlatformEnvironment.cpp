@@ -1,30 +1,19 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include "config/Config.h"
-#include "core/Console.hpp"
-#include "core/Exception.hpp"
-#include "core/Guard.hpp"
 #include "core/Path.hpp"
 #include "core/String.hpp"
 #include "OpenRCT2.h"
 #include "platform/platform.h"
 #include "platform/Platform2.h"
 #include "PlatformEnvironment.h"
-#include "Version.h"
 
 using namespace OpenRCT2;
 
@@ -34,9 +23,9 @@ private:
     std::string _basePath[DIRBASE_COUNT];
 
 public:
-    PlatformEnvironment(DIRBASE_VALUES basePaths)
+    explicit PlatformEnvironment(DIRBASE_VALUES basePaths)
     {
-        for (sint32 i = 0; i < DIRBASE_COUNT; i++)
+        for (int32_t i = 0; i < DIRBASE_COUNT; i++)
         {
             _basePath[i] = basePaths[i];
         }
@@ -100,6 +89,8 @@ private:
             return DIRBASE::RCT1;
         case PATHID::SCORES_RCT2:
             return DIRBASE::RCT2;
+        case PATHID::CHANGELOG:
+            return DIRBASE::DOCUMENTATION;
         case PATHID::NETWORK_GROUPS:
         case PATHID::NETWORK_SERVERS:
         case PATHID::NETWORK_USERS:
@@ -111,9 +102,9 @@ private:
     }
 };
 
-IPlatformEnvironment * OpenRCT2::CreatePlatformEnvironment(DIRBASE_VALUES basePaths)
+std::unique_ptr<IPlatformEnvironment> OpenRCT2::CreatePlatformEnvironment(DIRBASE_VALUES basePaths)
 {
-    return new PlatformEnvironment(basePaths);
+    return std::make_unique<PlatformEnvironment>(basePaths);
 }
 
 static std::string GetOpenRCT2DirectoryName()
@@ -125,7 +116,7 @@ static std::string GetOpenRCT2DirectoryName()
 #endif
 }
 
-IPlatformEnvironment * OpenRCT2::CreatePlatformEnvironment()
+std::unique_ptr<IPlatformEnvironment> OpenRCT2::CreatePlatformEnvironment()
 {
     auto subDirectory = GetOpenRCT2DirectoryName();
 
@@ -135,6 +126,7 @@ IPlatformEnvironment * OpenRCT2::CreatePlatformEnvironment()
     basePaths[(size_t)DIRBASE::USER] = Path::Combine(Platform::GetFolderPath(SPECIAL_FOLDER::USER_DATA), subDirectory);
     basePaths[(size_t)DIRBASE::CONFIG] = Path::Combine(Platform::GetFolderPath(SPECIAL_FOLDER::USER_CONFIG), subDirectory);
     basePaths[(size_t)DIRBASE::CACHE] = Path::Combine(Platform::GetFolderPath(SPECIAL_FOLDER::USER_CACHE), subDirectory);
+    basePaths[(size_t)DIRBASE::DOCUMENTATION] = Platform::GetDocsPath();
 
     // Override paths that have been specified via the command line
     if (!String::IsNullOrEmpty(gCustomRCT2DataPath))
@@ -150,6 +142,11 @@ IPlatformEnvironment * OpenRCT2::CreatePlatformEnvironment()
         basePaths[(size_t)DIRBASE::USER] = gCustomUserDataPath;
         basePaths[(size_t)DIRBASE::CONFIG] = gCustomUserDataPath;
         basePaths[(size_t)DIRBASE::CACHE] = gCustomUserDataPath;
+    }
+
+    if (basePaths[(size_t)DIRBASE::DOCUMENTATION].empty())
+    {
+        basePaths[(size_t)DIRBASE::DOCUMENTATION] = basePaths[(size_t)DIRBASE::OPENRCT2];
     }
 
     auto env = OpenRCT2::CreatePlatformEnvironment(basePaths);
@@ -175,6 +172,7 @@ IPlatformEnvironment * OpenRCT2::CreatePlatformEnvironment()
     return env;
 }
 
+// clang-format off
 const char * PlatformEnvironment::DirectoryNamesRCT2[] =
 {
     "Data",                 // DATA
@@ -206,7 +204,7 @@ const char * PlatformEnvironment::DirectoryNamesOpenRCT2[] =
     "scenario",             // SCENARIO
     "screenshot",           // SCREENSHOT
     "sequence",             // SEQUENCE
-    "shader",               // SHADER
+    "shaders",              // SHADER
     "themes",               // THEME
     "track",                // TRACK
 };
@@ -225,4 +223,6 @@ const char * PlatformEnvironment::FileNames[] =
     "highscores.dat",       // SCORES
     "scores.dat",           // SCORES (LEGACY)
     "Saved Games" PATH_SEPARATOR "scores.dat",  // SCORES (RCT2)
+    "changelog.txt"         // CHANGELOG
 };
+// clang-format on

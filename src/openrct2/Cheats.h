@@ -1,27 +1,16 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #ifndef _CHEATS_H_
 #define _CHEATS_H_
 
 #include "common.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 extern bool gCheatsSandboxMode;
 extern bool gCheatsDisableClearanceChecks;
@@ -95,6 +84,7 @@ enum {
     CHEAT_DISABLERIDEVALUEAGING,
     CHEAT_IGNORERESEARCHSTATUS,
     CHEAT_ENABLEALLDRAWABLETRACKPIECES,
+    CHEAT_DATE_SET,
 };
 
 enum {
@@ -119,17 +109,17 @@ enum {
 #define CHEATS_TRAM_INCREMENT 250
 #define CHEATS_STAFF_FAST_SPEED 0xFF
 #define CHEATS_STAFF_NORMAL_SPEED 0x60
+#define CHEATS_STAFF_FREEZE_SPEED 0
 
-extern sint32 park_rating_spinner_value;
+extern int32_t park_rating_spinner_value;
+extern int32_t year_spinner_value;
+extern int32_t month_spinner_value;
+extern int32_t day_spinner_value;
 
-void game_command_cheat(sint32* eax, sint32* ebx, sint32* ecx, sint32* edx, sint32* esi, sint32* edi, sint32* ebp);
+void game_command_cheat(int32_t* eax, int32_t* ebx, int32_t* ecx, int32_t* edx, int32_t* esi, int32_t* edi, int32_t* ebp);
 
 void cheats_reset();
 
 const char* cheats_get_cheat_string(int cheat, int edx, int edi);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

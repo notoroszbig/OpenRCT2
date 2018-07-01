@@ -1,32 +1,25 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #ifndef _DIAGNOSTIC_H_
 #define _DIAGNOSTIC_H_
 
 #include "common.h"
 
-typedef enum {
+enum DIAGNOSTIC_LEVEL {
     DIAGNOSTIC_LEVEL_FATAL,
     DIAGNOSTIC_LEVEL_ERROR,
     DIAGNOSTIC_LEVEL_WARNING,
     DIAGNOSTIC_LEVEL_VERBOSE,
     DIAGNOSTIC_LEVEL_INFORMATION,
     DIAGNOSTIC_LEVEL_COUNT
-} DiagnosticLevel;
+};
 
 /**
  * Compile-time debug levels.
@@ -75,18 +68,10 @@ typedef enum {
     #define DEBUG_LEVEL_1 0
 #endif // defined(DEBUG)
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
 extern bool _log_levels[DIAGNOSTIC_LEVEL_COUNT];
 
-void diagnostic_log(DiagnosticLevel diagnosticLevel, const char *format, ...);
-void diagnostic_log_with_location(DiagnosticLevel diagnosticLevel, const char *file, const char *function, sint32 line, const char *format, ...);
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
+void diagnostic_log(DIAGNOSTIC_LEVEL diagnosticLevel, const char *format, ...);
+void diagnostic_log_with_location(DIAGNOSTIC_LEVEL diagnosticLevel, const char *file, const char *function, int32_t line, const char *format, ...);
 
 #ifdef _MSC_VER
 #define diagnostic_log_macro(level, format, ...)    diagnostic_log_with_location(level, __FILE__, __FUNCTION__, __LINE__, format, ## __VA_ARGS__)

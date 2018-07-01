@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/config/Config.h>
 #include <openrct2/Context.h>
@@ -22,11 +15,12 @@
 #include <openrct2/Editor.h>
 #include <openrct2/Game.h>
 #include <openrct2/Input.h>
-#include <openrct2/interface/widget.h>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2-ui/interface/Widget.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2/sprites.h>
 #include <openrct2-ui/interface/Dropdown.h>
 
+// clang-format off
 enum {
     WIDX_START_NEW_GAME,
     WIDX_CONTINUE_SAVED_GAME,
@@ -44,8 +38,8 @@ static rct_widget window_title_menu_widgets[] = {
 
 static void window_title_menu_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_title_menu_mousedown(rct_window *w, rct_widgetindex widgetIndex, rct_widget* widget);
-static void window_title_menu_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex);
-static void window_title_menu_cursor(rct_window *w, rct_widgetindex widgetIndex, sint32 x, sint32 y, sint32 *cursorId);
+static void window_title_menu_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
+static void window_title_menu_cursor(rct_window *w, rct_widgetindex widgetIndex, int32_t x, int32_t y, int32_t *cursorId);
 static void window_title_menu_paint(rct_window *w, rct_drawpixelinfo *dpi);
 
 static rct_window_event_list window_title_menu_events = {
@@ -78,6 +72,7 @@ static rct_window_event_list window_title_menu_events = {
     window_title_menu_paint,
     nullptr
 };
+// clang-format on
 
 /**
  * Creates the window containing the menu buttons on the title screen.
@@ -105,7 +100,7 @@ rct_window * window_title_menu_open()
     );
 
     rct_widgetindex i = 0;
-    sint32 x = 0;
+    int32_t x = 0;
     for (rct_widget *widget = window->widgets; widget->type != WWT_LAST; widget++) {
         if (widget_is_enabled(window, i)) {
             widget->left = x;
@@ -143,7 +138,7 @@ static void window_title_menu_mouseup(rct_window *w, rct_widgetindex widgetIndex
         else {
             window_close_by_class(WC_LOADSAVE);
             window_close_by_class(WC_SERVER_LIST);
-            window_scenarioselect_open(window_title_menu_scenarioselect_callback);
+            window_scenarioselect_open(window_title_menu_scenarioselect_callback, false);
         }
         break;
     case WIDX_CONTINUE_SAVED_GAME:
@@ -189,7 +184,7 @@ static void window_title_menu_mousedown(rct_window *w, rct_widgetindex widgetInd
     }
 }
 
-static void window_title_menu_dropdown(rct_window *w, rct_widgetindex widgetIndex, sint32 dropdownIndex)
+static void window_title_menu_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex)
 {
     if (widgetIndex == WIDX_GAME_TOOLS) {
         switch (dropdownIndex) {
@@ -209,7 +204,7 @@ static void window_title_menu_dropdown(rct_window *w, rct_widgetindex widgetInde
     }
 }
 
-static void window_title_menu_cursor(rct_window *w, rct_widgetindex widgetIndex, sint32 x, sint32 y, sint32 *cursorId)
+static void window_title_menu_cursor(rct_window *w, rct_widgetindex widgetIndex, int32_t x, int32_t y, int32_t *cursorId)
 {
     gTooltipTimeout = 2000;
 }

@@ -1,36 +1,29 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #ifdef __ENABLE_DISCORD__
 
-#include <discord-rpc.h>
+#include <discord_rpc.h>
 #include "../Context.h"
 #include "../core/Console.hpp"
 #include "../core/String.hpp"
-#include "../localisation/localisation.h"
+#include "../localisation/Localisation.h"
 #include "../OpenRCT2.h"
-#include "../world/park.h"
+#include "../world/Park.h"
 #include "DiscordService.h"
 #include "network.h"
 
 constexpr const char * APPLICATION_ID = "378612438200877056";
 constexpr const char * STEAM_APP_ID = nullptr;
-constexpr const uint32 REFRESH_INTERVAL = 5 * GAME_UPDATE_FPS; // 5 seconds
+constexpr const uint32_t REFRESH_INTERVAL = 5 * GAME_UPDATE_FPS; // 5 seconds
 
-static void OnReady()
+static void OnReady([[maybe_unused]] const DiscordUser* request)
 {
     log_verbose("DiscordService::OnReady()");
 }

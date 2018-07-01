@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2-ui/windows/Window.h>
 
@@ -25,12 +18,16 @@
 #include <openrct2/Editor.h>
 #include <openrct2/Input.h>
 #include <openrct2/sprites.h>
-#include <openrct2/localisation/localisation.h>
-#include <openrct2/interface/themes.h>
-#include <openrct2/interface/widget.h>
+#include <openrct2/localisation/Localisation.h>
+#include <openrct2-ui/interface/Widget.h>
 #include <openrct2/windows/Intent.h>
-#include <openrct2/world/scenery.h>
+#include <openrct2/world/Scenery.h>
+#include <openrct2/management/Research.h>
+#include <openrct2/scenario/Scenario.h>
+#include <openrct2/world/Park.h>
+#include "../interface/Theme.h"
 
+// clang-format off
 enum {
     WIDX_PREVIOUS_IMAGE,        // 1
     WIDX_PREVIOUS_STEP_BUTTON,  // 2
@@ -114,7 +111,7 @@ static EMPTY_ARGS_VOID_POINTER *next_button_mouseup_events[] = {
     nullptr
 };
 
-static const rct_string_id EditorStepNames[] = {
+static constexpr const rct_string_id EditorStepNames[] = {
     STR_EDITOR_STEP_OBJECT_SELECTION,
     STR_EDITOR_STEP_LANDSCAPE_EDITOR,
     STR_EDITOR_STEP_INVENTIONS_LIST_SET_UP,
@@ -124,6 +121,7 @@ static const rct_string_id EditorStepNames[] = {
     STR_EDITOR_STEP_ROLLERCOASTER_DESIGNER,
     STR_EDITOR_STEP_TRACK_DESIGNS_MANAGER,
 };
+// clang-format on
 
 /**
 * Creates the main editor top toolbar window.
@@ -144,7 +142,7 @@ rct_window * window_editor_bottom_toolbar_open()
         (1 << WIDX_NEXT_IMAGE);
 
     window_init_scroll_widgets(window);
-    reset_researched_scenery_items();
+    set_all_scenery_items_invented();
 
     return window;
 }
@@ -165,7 +163,7 @@ void window_editor_bottom_toolbar_jump_back_to_object_selection() {
 */
 void window_editor_bottom_toolbar_jump_back_to_landscape_editor() {
     window_close_all();
-    reset_researched_scenery_items();
+    set_all_scenery_items_invented();
     scenery_set_default_placement_configuration();
     gS6Info.editor_step = EDITOR_STEP_LANDSCAPE_EDITOR;
     context_open_window(WC_MAP);
@@ -202,7 +200,7 @@ static bool window_editor_bottom_toolbar_check_object_selection()
 {
     rct_window *w;
 
-    sint32 missingObjectType = Editor::CheckObjectSelection();
+    int32_t missingObjectType = Editor::CheckObjectSelection();
     if (missingObjectType < 0) {
         window_close_by_class(WC_EDITOR_OBJECT_SELECTION);
         return true;
@@ -227,12 +225,13 @@ void window_editor_bottom_toolbar_jump_forward_from_object_selection()
         return;
 
     if (gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER) {
-        reset_researched_ride_types_and_entries();
+        set_every_ride_type_invented();
+        set_every_ride_entry_invented();
         context_open_window(WC_CONSTRUCT_RIDE);
         gS6Info.editor_step = EDITOR_STEP_ROLLERCOASTER_DESIGNER;
         gfx_invalidate_screen();
     } else {
-        reset_researched_scenery_items();
+        set_all_scenery_items_invented();
         scenery_set_default_placement_configuration();
         gS6Info.editor_step = EDITOR_STEP_LANDSCAPE_EDITOR;
         context_open_window(WC_MAP);
@@ -306,7 +305,7 @@ void window_editor_bottom_toolbar_jump_forward_to_save_scenario()
 *
 *  rct2: 0x0066F5AE
 */
-static void window_editor_bottom_toolbar_mouseup(rct_window *w, rct_widgetindex widgetIndex)
+static void window_editor_bottom_toolbar_mouseup([[maybe_unused]] rct_window * w, rct_widgetindex widgetIndex)
 {
     if (widgetIndex == WIDX_PREVIOUS_STEP_BUTTON) {
         if ((gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER) ||
@@ -337,7 +336,7 @@ void window_editor_bottom_toolbar_invalidate(rct_window *w)
 {
     colour_scheme_update_by_class(w, (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) ? WC_EDITOR_SCENARIO_BOTTOM_TOOLBAR : WC_EDITOR_TRACK_BOTTOM_TOOLBAR);
 
-    uint16 screenWidth = context_get_width();
+    uint16_t screenWidth = context_get_width();
     window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].left = screenWidth - 200;
     window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].right = screenWidth - 1;
     window_editor_bottom_toolbar_widgets[WIDX_NEXT_STEP_BUTTON].left = screenWidth - 198;
@@ -430,28 +429,28 @@ void window_editor_bottom_toolbar_paint(rct_window *w, rct_drawpixelinfo *dpi)
                 w->colours[1], INSET_RECT_F_30);
         }
 
-        sint16 stateX =
+        int16_t stateX =
             (window_editor_bottom_toolbar_widgets[WIDX_PREVIOUS_IMAGE].right +
             window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].left) / 2 + w->x;
-        sint16 stateY = w->height - 0x0C + w->y;
+        int16_t stateY = w->height - 0x0C + w->y;
         gfx_draw_string_centred(dpi, EditorStepNames[gS6Info.editor_step],
-            stateX, stateY, NOT_TRANSLUCENT(w->colours[2]) | COLOUR_FLAG_OUTLINE, 0);
+            stateX, stateY, NOT_TRANSLUCENT(w->colours[2]) | COLOUR_FLAG_OUTLINE, nullptr);
 
         if (drawPreviousButton) {
             gfx_draw_sprite(dpi, SPR_PREVIOUS,
                 window_editor_bottom_toolbar_widgets[WIDX_PREVIOUS_IMAGE].left + 6 + w->x,
                 window_editor_bottom_toolbar_widgets[WIDX_PREVIOUS_IMAGE].top + 6 + w->y, 0);
 
-            sint32 textColour = NOT_TRANSLUCENT(w->colours[1]);
+            int32_t textColour = NOT_TRANSLUCENT(w->colours[1]);
             if (gHoverWidget.window_classification == WC_BOTTOM_TOOLBAR &&
                 gHoverWidget.widget_index == WIDX_PREVIOUS_STEP_BUTTON
             ) {
                 textColour = COLOUR_WHITE;
             }
 
-            sint16 textX = (window_editor_bottom_toolbar_widgets[WIDX_PREVIOUS_IMAGE].left + 30 +
+            int16_t textX = (window_editor_bottom_toolbar_widgets[WIDX_PREVIOUS_IMAGE].left + 30 +
                 window_editor_bottom_toolbar_widgets[WIDX_PREVIOUS_IMAGE].right) / 2 + w->x;
-            sint16 textY = window_editor_bottom_toolbar_widgets[WIDX_PREVIOUS_IMAGE].top + 6 + w->y;
+            int16_t textY = window_editor_bottom_toolbar_widgets[WIDX_PREVIOUS_IMAGE].top + 6 + w->y;
 
             rct_string_id stringId = EditorStepNames[gS6Info.editor_step - 1];
             if (gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER)
@@ -466,7 +465,7 @@ void window_editor_bottom_toolbar_paint(rct_window *w, rct_drawpixelinfo *dpi)
                 window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].right - 29 + w->x,
                 window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].top + 6 + w->y, 0);
 
-            sint32 textColour = NOT_TRANSLUCENT(w->colours[1]);
+            int32_t textColour = NOT_TRANSLUCENT(w->colours[1]);
 
             if (gHoverWidget.window_classification == WC_BOTTOM_TOOLBAR &&
                 gHoverWidget.widget_index == WIDX_NEXT_STEP_BUTTON
@@ -474,9 +473,9 @@ void window_editor_bottom_toolbar_paint(rct_window *w, rct_drawpixelinfo *dpi)
                 textColour = COLOUR_WHITE;
             }
 
-            sint16 textX = (window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].left +
+            int16_t textX = (window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].left +
                 window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].right - 30) / 2 + w->x;
-            sint16 textY = window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].top + 6 + w->y;
+            int16_t textY = window_editor_bottom_toolbar_widgets[WIDX_NEXT_IMAGE].top + 6 + w->y;
 
             rct_string_id stringId = EditorStepNames[gS6Info.editor_step + 1];
             if (gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER)

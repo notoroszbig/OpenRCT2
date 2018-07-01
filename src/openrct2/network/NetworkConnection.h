@@ -1,22 +1,13 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #pragma once
-
-#ifdef __cplusplus
 
 #ifndef DISABLE_NETWORK
 #include <list>
@@ -40,15 +31,15 @@ public:
     NetworkPacket                               InboundPacket;
     NETWORK_AUTH                                AuthStatus      = NETWORK_AUTH_NONE;
     NetworkPlayer *                             Player          = nullptr;
-    uint32                                      PingTime        = 0;
+    uint32_t                                      PingTime        = 0;
     NetworkKey                                  Key;
-    std::vector<uint8>                          Challenge;
+    std::vector<uint8_t>                          Challenge;
     std::vector<const ObjectRepositoryItem *>   RequestedObjects;
 
     NetworkConnection();
     ~NetworkConnection();
 
-    sint32  ReadPacket();
+    int32_t  ReadPacket();
     void QueuePacket(std::unique_ptr<NetworkPacket> packet, bool front = false);
     void SendQueuedPackets();
     void ResetLastPacketTime();
@@ -60,11 +51,10 @@ public:
 
 private:
     std::list<std::unique_ptr<NetworkPacket>>   _outboundPackets;
-    uint32                                      _lastPacketTime;
+    uint32_t                                      _lastPacketTime = 0;
     utf8 *                                      _lastDisconnectReason   = nullptr;
 
     bool SendPacket(NetworkPacket &packet);
 };
 
 #endif // DISABLE_NETWORK
-#endif

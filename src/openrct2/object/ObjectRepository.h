@@ -1,75 +1,60 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #pragma once
 
-#ifdef __cplusplus
-    #include <vector>
-#endif
-
+#include <memory>
+#include <vector>
 #include "../common.h"
+#include "../object/Object.h"
+#include "../ride/Ride.h"
 
-#include "../object.h"
-#include "../ride/ride.h"
+interface   IStream;
+class       Object;
+namespace OpenRCT2
+{
+    interface IPlatformEnvironment;
+}
 
-#ifdef __cplusplus
-    interface   IStream;
-    class       Object;
-    namespace OpenRCT2
-    {
-        interface IPlatformEnvironment;
-    }
-#else
-    typedef struct Object Object;
-#endif
+namespace OpenRCT2::Localisation
+{
+    class LocalisationService;
+}
 
-typedef struct rct_drawpixelinfo rct_drawpixelinfo;
+struct rct_drawpixelinfo;
 
-typedef struct ObjectRepositoryItem
+struct ObjectRepositoryItem
 {
     size_t             Id;
     rct_object_entry   ObjectEntry;
-    utf8 *             Path;
-    utf8 *             Name;
-    Object *           LoadedObject;
-    union
+    std::string        Path;
+    std::string        Name;
+    Object *           LoadedObject{};
+    struct
     {
-        struct
-        {
-            uint8   RideFlags;
-            uint8   RideCategory[2];
-            uint8   RideType[MAX_RIDE_TYPES_PER_RIDE_ENTRY];
-            uint8   RideGroupIndex;
-        };
-        struct
-        {
-            uint16             NumThemeObjects;
-            rct_object_entry * ThemeObjects;
-        };
-    };
-} ObjectRepositoryItem;
-
-#ifdef __cplusplus
+        uint8_t   RideFlags;
+        uint8_t   RideCategory[MAX_CATEGORIES_PER_RIDE];
+        uint8_t   RideType[MAX_RIDE_TYPES_PER_RIDE_ENTRY];
+        uint8_t   RideGroupIndex;
+    } RideInfo;
+    struct
+    {
+        std::vector<rct_object_entry> Entries;
+    } SceneryGroupInfo;
+};
 
 interface IObjectRepository
 {
-    virtual ~IObjectRepository() { }
+    virtual ~IObjectRepository() = default;
 
-    virtual void                            LoadOrConstruct() abstract;
-    virtual void                            Construct() abstract;
+    virtual void                            LoadOrConstruct(int32_t language) abstract;
+    virtual void                            Construct(int32_t language) abstract;
     virtual size_t                          GetNumObjects() const abstract;
     virtual const ObjectRepositoryItem *    GetObjects() const abstract;
     virtual const ObjectRepositoryItem *    FindObject(const utf8 * name) const abstract;
@@ -87,17 +72,9 @@ interface IObjectRepository
     virtual void                            WritePackedObjects(IStream * stream, std::vector<const ObjectRepositoryItem *> &objects) abstract;
 };
 
-IObjectRepository * CreateObjectRepository(OpenRCT2::IPlatformEnvironment * env);
-IObjectRepository * GetObjectRepository();
+std::unique_ptr<IObjectRepository> CreateObjectRepository(const std::shared_ptr<OpenRCT2::IPlatformEnvironment>& env);
 
 bool IsObjectCustom(const ObjectRepositoryItem * object);
-
-#endif
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
 
 size_t                          object_repository_get_items_count();
 const ObjectRepositoryItem *    object_repository_get_items();
@@ -106,13 +83,4 @@ const ObjectRepositoryItem *    object_repository_find_object_by_name(const char
 void *                          object_repository_load_object(const rct_object_entry * objectEntry);
 
 void            object_delete(void * object);
-void            object_draw_preview(const void * object, rct_drawpixelinfo * dpi, sint32 width, sint32 height);
-
-#ifdef __cplusplus
-}
-#endif
-
-enum ORI_RIDE_FLAG
-{
-    ORI_RIDE_FLAG_SEPARATE = 1 << 0,
-};
+void            object_draw_preview(const void * object, rct_drawpixelinfo * dpi, int32_t width, int32_t height);

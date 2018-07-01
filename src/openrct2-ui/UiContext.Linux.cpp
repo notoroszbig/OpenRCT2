@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #if (defined(__linux__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__EMSCRIPTEN__)) && !defined(__ANDROID__)
 
@@ -20,15 +13,16 @@
 #include <sstream>
 #include <stdexcept>
 #include <openrct2/common.h>
+#include <openrct2/core/Path.hpp>
 #include <openrct2/core/String.hpp>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2/ui/UiContext.h>
 #include "UiContext.h"
 
 
 #include <SDL.h>
 
-namespace OpenRCT2 { namespace Ui
+namespace OpenRCT2::Ui
 {
     enum class DIALOG_TYPE
     {
@@ -169,13 +163,13 @@ namespace OpenRCT2 { namespace Ui
                         // array must be carefully populated, at least the first element.
                         std::string pattern = desc.Filters[0].Pattern;
                         std::string defaultExtension = pattern.substr(pattern.find_last_of('.'));
-                        int dotPosition = output.size() - defaultExtension.size();
-                        // Add the default extension if no extension is specified
-                        if (output.substr(dotPosition, defaultExtension.size()).compare(defaultExtension) == 0)
-                        {
-                            result = output;
-                        }
-                        else
+
+                        const utf8 * filename = Path::GetFileName(output.c_str());
+
+                        // If there is no extension, append the pattern
+                        const utf8 * extension = Path::GetExtension(filename);
+                        result = output;
+                        if (extension[0] == '\0' && !defaultExtension.empty())
                         {
                             result = output.append(defaultExtension);
                         }
@@ -261,7 +255,7 @@ namespace OpenRCT2 { namespace Ui
             return DIALOG_TYPE::NONE;
         }
 
-        static sint32 Execute(const std::string &command, std::string * output = nullptr)
+        static int32_t Execute(const std::string &command, std::string * output = nullptr)
         {
 #ifndef __EMSCRIPTEN__
             log_verbose("executing \"%s\"...\n", command.c_str());
@@ -373,7 +367,7 @@ namespace OpenRCT2 { namespace Ui
 
         static void ThrowMissingDialogApp()
         {
-            IUiContext * uiContext = GetContext()->GetUiContext();
+            auto uiContext = GetContext()->GetUiContext();
             std::string dialogMissingWarning = language_get_string(STR_MISSING_DIALOG_APPLICATION_ERROR);
             uiContext->ShowMessageBox(dialogMissingWarning);
             throw std::runtime_error(dialogMissingWarning);
@@ -384,6 +378,6 @@ namespace OpenRCT2 { namespace Ui
     {
         return new LinuxContext();
     }
-} }
+} // namespace OpenRCT2::Ui
 
 #endif // __linux__ || __OpenBSD__

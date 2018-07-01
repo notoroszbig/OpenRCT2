@@ -1,44 +1,39 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #ifndef DISABLE_NETWORK
 
 #include "NetworkTypes.h"
 #include "NetworkPacket.h"
 
+#include <memory>
+
 std::unique_ptr<NetworkPacket> NetworkPacket::Allocate()
 {
-    return std::unique_ptr<NetworkPacket>(new NetworkPacket); // change to make_unique in c++14
+    return std::make_unique<NetworkPacket>();
 }
 
 std::unique_ptr<NetworkPacket> NetworkPacket::Duplicate(NetworkPacket &packet)
 {
-    return std::unique_ptr<NetworkPacket>(new NetworkPacket(packet)); // change to make_unique in c++14
+    return std::make_unique<NetworkPacket>(packet);
 }
 
-uint8 * NetworkPacket::GetData()
+uint8_t * NetworkPacket::GetData()
 {
     return &(*Data)[0];
 }
 
-uint32 NetworkPacket::GetCommand()
+int32_t NetworkPacket::GetCommand()
 {
-    if (Data->size() >= sizeof(uint32))
+    if (Data->size() >= sizeof(uint32_t))
     {
-        return ByteSwapBE(*(uint32 *)(&(*Data)[0]));
+        return ByteSwapBE(*(uint32_t *)(&(*Data)[0]));
     }
     else
     {
@@ -67,17 +62,17 @@ bool NetworkPacket::CommandRequiresAuth()
     }
 }
 
-void NetworkPacket::Write(const uint8 * bytes, size_t size)
+void NetworkPacket::Write(const uint8_t * bytes, size_t size)
 {
     Data->insert(Data->end(), bytes, bytes + size);
 }
 
 void NetworkPacket::WriteString(const utf8 * string)
 {
-    Write((uint8 *)string, strlen(string) + 1);
+    Write((uint8_t *)string, strlen(string) + 1);
 }
 
-const uint8 * NetworkPacket::Read(size_t size)
+const uint8_t * NetworkPacket::Read(size_t size)
 {
     if (BytesRead + size > NetworkPacket::Size)
     {
@@ -85,7 +80,7 @@ const uint8 * NetworkPacket::Read(size_t size)
     }
     else
     {
-        uint8 * data = &GetData()[BytesRead];
+        uint8_t * data = &GetData()[BytesRead];
         BytesRead += size;
         return data;
     }

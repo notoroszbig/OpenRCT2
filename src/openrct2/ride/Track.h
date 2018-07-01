@@ -1,69 +1,64 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #pragma once
 
 #include "../common.h"
-#include "../object.h"
-#include "ride.h"
+#include "../object/Object.h"
+#include "Ride.h"
 
 #pragma pack(push, 1)
-typedef struct rct_trackdefinition
+struct rct_trackdefinition
 {
-    uint8 type;
-    uint8 vangle_end;
-    uint8 vangle_start;
-    uint8 bank_end;
-    uint8 bank_start;
-    sint8 preview_z_offset;
-    uint8 pad[2];
-} rct_trackdefinition;
+    uint8_t type;
+    uint8_t vangle_end;
+    uint8_t vangle_start;
+    uint8_t bank_end;
+    uint8_t bank_start;
+    int8_t preview_z_offset;
+    uint8_t pad[2] = {};
+};
 assert_struct_size(rct_trackdefinition, 8);
 #pragma pack(pop)
 
-/**
-* Size: 0x0A
-*/
-typedef struct rct_preview_track
+/* size 0x0A */
+struct rct_preview_track
 {
-    uint8  index;    // 0x00
-    sint16 x;       // 0x01
-    sint16 y;       // 0x03
-    sint16 z;       // 0x05
-    uint8  var_07;
-    uint8  var_08;
-    uint8  var_09;
-} rct_preview_track;
+    uint8_t  index;    // 0x00
+    int16_t x;       // 0x01
+    int16_t y;       // 0x03
+    int16_t z;       // 0x05
+    uint8_t  var_07;
+    uint8_t  var_08;
+    uint8_t  var_09;
+};
 
 /* size 0x0A */
-typedef struct rct_track_coordinates
+struct rct_track_coordinates
 {
-    sint8  rotation_begin;   // 0x00
-    sint8  rotation_end;     // 0x01
-    sint16 z_begin;         // 0x02
-    sint16 z_end;           // 0x04
-    sint16 x;               // 0x06
-    sint16 y;               // 0x08
-} rct_track_coordinates;
+    int8_t  rotation_begin;   // 0x00
+    int8_t  rotation_end;     // 0x01
+    int16_t z_begin;         // 0x02
+    int16_t z_end;           // 0x04
+    int16_t x;               // 0x06
+    int16_t y;               // 0x08
+};
 
 enum
 {
     TRACK_ELEMENT_FLAG_TERMINAL_STATION = 1 << 3,
     TRACK_ELEMENT_FLAG_INVERTED         = 1 << 6,
-    TRACK_ELEMENT_FLAG_CHAIN_LIFT       = 1 << 7,
+};
+
+enum
+{
+    TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT  = 1 << 7,
 };
 
 enum
@@ -72,10 +67,13 @@ enum
     // that field in the map element
 
     // Used for multi-dimension coaster
-        TRACK_ELEMENT_COLOUR_FLAG_INVERTED = (1 << 2),
+    TRACK_ELEMENT_COLOUR_FLAG_INVERTED = (1 << 2),
 
     // Used for giga coaster
-        TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT = (1 << 3),
+    TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT = (1 << 3),
+
+    TRACK_ELEMENT_DOOR_A_MASK = 0b00011100,
+    TRACK_ELEMENT_DOOR_B_MASK = 0b11100000,
 };
 
 #define TRACK_ELEMENT_FLAG_MAGNITUDE_MASK 0x0F
@@ -508,81 +506,80 @@ enum
     GC_SET_MAZE_TRACK_FILL  = 2,
 };
 
-typedef struct track_circuit_iterator
+struct track_circuit_iterator
 {
-    rct_xy_element  last;
-    rct_xy_element  current;
-    sint32          currentZ;
-    sint32          currentDirection;
+    CoordsXYE       last;
+    CoordsXYE       current;
+    int32_t             currentZ;
+    int32_t             currentDirection;
     rct_tile_element * first;
-    bool            firstIteration;
-    bool            looped;
-} track_circuit_iterator;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+    bool               firstIteration;
+    bool               looped;
+};
 
 extern const rct_trackdefinition FlatRideTrackDefinitions[256];
 extern const rct_trackdefinition TrackDefinitions[256];
 
-extern uint8 gTrackGroundFlags;
+extern uint8_t gTrackGroundFlags;
 
-sint32 track_is_connected_by_shape(rct_tile_element * a, rct_tile_element * b);
+int32_t track_is_connected_by_shape(rct_tile_element * a, rct_tile_element * b);
 
-const rct_preview_track * get_track_def_from_ride(Ride * ride, sint32 trackType);
-const rct_preview_track * get_track_def_from_ride_index(sint32 rideIndex, sint32 trackType);
-const rct_track_coordinates * get_track_coord_from_ride(Ride * ride, sint32 trackType);
+const rct_preview_track * get_track_def_from_ride(Ride * ride, int32_t trackType);
+const rct_preview_track * get_track_def_from_ride_index(int32_t rideIndex, int32_t trackType);
+const rct_track_coordinates * get_track_coord_from_ride(Ride * ride, int32_t trackType);
 
-void track_circuit_iterator_begin(track_circuit_iterator * it, rct_xy_element first);
+void track_circuit_iterator_begin(track_circuit_iterator * it, CoordsXYE first);
 bool track_circuit_iterator_previous(track_circuit_iterator * it);
 bool track_circuit_iterator_next(track_circuit_iterator * it);
+bool track_circuit_iterators_match(const track_circuit_iterator * firstIt, const track_circuit_iterator * secondIt);
 
-void track_get_back(rct_xy_element * input, rct_xy_element * output);
-void track_get_front(rct_xy_element * input, rct_xy_element * output);
+void track_get_back(CoordsXYE * input, CoordsXYE * output);
+void track_get_front(CoordsXYE * input, CoordsXYE * output);
 
 bool track_element_is_block_start(rct_tile_element * trackElement);
-bool track_element_is_covered(sint32 trackElementType);
+bool track_element_is_covered(int32_t trackElementType);
 bool track_element_is_station(rct_tile_element * trackElement);
-bool track_element_is_lift_hill(rct_tile_element * trackElement);
+bool track_element_is_lift_hill(const rct_tile_element * trackElement);
 void track_element_set_lift_hill(rct_tile_element * trackElement, bool on);
-bool track_element_is_cable_lift(rct_tile_element * trackElement);
+bool track_element_is_cable_lift(const rct_tile_element * trackElement);
 void track_element_set_cable_lift(rct_tile_element * trackElement);
 void track_element_clear_cable_lift(rct_tile_element * trackElement);
-bool track_element_is_inverted(rct_tile_element * tileElement);
+bool track_element_is_inverted(const rct_tile_element * tileElement);
 void track_element_set_inverted(rct_tile_element * tileElement, bool inverted);
 
-sint32 track_get_actual_bank(rct_tile_element * tileElement, sint32 bank);
-sint32 track_get_actual_bank_2(sint32 rideType, bool isInverted, sint32 bank);
-sint32 track_get_actual_bank_3(rct_vehicle * vehicle, rct_tile_element * tileElement);
+int32_t track_get_actual_bank(rct_tile_element * tileElement, int32_t bank);
+int32_t track_get_actual_bank_2(int32_t rideType, bool isInverted, int32_t bank);
+int32_t track_get_actual_bank_3(rct_vehicle * vehicle, rct_tile_element * tileElement);
 
-void game_command_place_track(sint32 * eax, sint32 * ebx, sint32 * ecx, sint32 * edx, sint32 * esi, sint32 * edi, sint32 * ebp);
-void game_command_remove_track(sint32 * eax, sint32 * ebx, sint32 * ecx, sint32 * edx, sint32 * esi, sint32 * edi, sint32 * ebp);
-void game_command_set_maze_track(sint32 * eax, sint32 * ebx, sint32 * ecx, sint32 * edx, sint32 * esi, sint32 * edi, sint32 * ebp);
-void game_command_set_brakes_speed(sint32 * eax, sint32 * ebx, sint32 * ecx, sint32 * edx, sint32 * esi, sint32 * edi, sint32 * ebp);
-bool track_element_is_booster(uint8 rideType, uint8 trackType);
-bool track_element_has_speed_setting(uint8 trackType);
-uint8 track_element_get_seat_rotation(const rct_tile_element * tileElement);
-void track_element_set_seat_rotation(rct_tile_element * tileElement, uint8 seatRotation);
-uint8 track_element_get_colour_scheme(const rct_tile_element * tileElement);
-void track_element_set_colour_scheme(rct_tile_element * tileElement, uint8 colourScheme);
-sint32 tile_element_get_station(const rct_tile_element * tileElement);
-void tile_element_set_station(rct_tile_element * tileElement, uint32 stationIndex);
-sint32 tile_element_get_track_sequence(const rct_tile_element * tileElement);
-void tile_element_set_track_sequence(rct_tile_element * tileElement, sint32 trackSequence);
+void game_command_place_track(int32_t * eax, int32_t * ebx, int32_t * ecx, int32_t * edx, int32_t * esi, int32_t * edi, int32_t * ebp);
+void game_command_remove_track(int32_t * eax, int32_t * ebx, int32_t * ecx, int32_t * edx, int32_t * esi, int32_t * edi, int32_t * ebp);
+
+void game_command_set_maze_track(int32_t * eax, int32_t * ebx, int32_t * ecx, int32_t * edx, int32_t * esi, int32_t * edi, int32_t * ebp);
+money32 maze_set_track(uint16_t x, uint16_t y, uint16_t z, uint8_t flags, bool initialPlacement, uint8_t direction, uint8_t rideIndex, uint8_t mode);
+
+void game_command_set_brakes_speed(int32_t * eax, int32_t * ebx, int32_t * ecx, int32_t * edx, int32_t * esi, int32_t * edi, int32_t * ebp);
+bool track_element_is_booster(uint8_t rideType, uint8_t trackType);
+bool track_element_has_speed_setting(uint8_t trackType);
+uint8_t track_element_get_seat_rotation(const rct_tile_element * tileElement);
+void track_element_set_seat_rotation(rct_tile_element * tileElement, uint8_t seatRotation);
+uint8_t track_element_get_colour_scheme(const rct_tile_element * tileElement);
+void track_element_set_colour_scheme(rct_tile_element * tileElement, uint8_t colourScheme);
+int32_t tile_element_get_station(const rct_tile_element * tileElement);
+void tile_element_set_station(rct_tile_element * tileElement, uint32_t stationIndex);
+int32_t tile_element_get_track_sequence(const rct_tile_element * tileElement);
+void tile_element_set_track_sequence(rct_tile_element * tileElement, int32_t trackSequence);
 bool tile_element_get_green_light(const rct_tile_element * tileElement);
 void tile_element_set_green_light(rct_tile_element * tileElement, bool greenLight);
-sint32 tile_element_get_brake_booster_speed(const rct_tile_element *tileElement);
-void tile_element_set_brake_booster_speed(rct_tile_element *tileElement, sint32 speed);
+int32_t tile_element_get_brake_booster_speed(const rct_tile_element *tileElement);
+void tile_element_set_brake_booster_speed(rct_tile_element *tileElement, int32_t speed);
 bool tile_element_is_taking_photo(const rct_tile_element * tileElement);
 void tile_element_set_onride_photo_timeout(rct_tile_element * tileElement);
 void tile_element_decrement_onride_photo_timout(rct_tile_element * tileElement);
-uint16 track_element_get_maze_entry(const rct_tile_element * tileElement);
-uint8 track_element_get_ride_index(const rct_tile_element * tileElement);
-void track_element_set_ride_index(rct_tile_element * tileElement, uint8 rideIndex);
-uint8 track_element_get_type(const rct_tile_element * tileElement);
-void track_element_set_type(rct_tile_element * tileElement, uint8 rideIndex);
+uint16_t track_element_get_maze_entry(const rct_tile_element * tileElement);
+uint8_t track_element_get_ride_index(const rct_tile_element * tileElement);
+void track_element_set_ride_index(rct_tile_element * tileElement, uint8_t rideIndex);
+uint8_t track_element_get_type(const rct_tile_element * tileElement);
+void track_element_set_type(rct_tile_element * tileElement, uint8_t rideIndex);
 
-#ifdef __cplusplus
-}
-#endif
+uint8_t track_element_get_door_a_state(const rct_tile_element * tileElement);
+uint8_t track_element_get_door_b_state(const rct_tile_element * tileElement);

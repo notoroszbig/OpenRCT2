@@ -1,30 +1,23 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
-#include "../../drawing/drawing.h"
-#include "../../interface/viewport.h"
-#include "../../paint/tile_element/TileElement.h"
+#include "../../drawing/Drawing.h"
+#include "../../interface/Viewport.h"
+#include "../../paint/tile_element/Paint.TileElement.h"
 #include "../../paint/Paint.h"
 #include "../../paint/Supports.h"
 #include "../../sprites.h"
-#include "../../world/map.h"
-#include "../../world/sprite.h"
-#include "../ride_data.h"
+#include "../../world/Map.h"
+#include "../../world/Sprite.h"
+#include "../RideData.h"
 #include "../TrackData.h"
-#include "../track_paint.h"
+#include "../TrackPaint.h"
 
 enum
 {
@@ -155,14 +148,14 @@ enum
     SPR_WILD_MOUSE_QUARTER_TURN_3_25_DEG_DOWN_SE_NE_PART_1 = 17025,
 };
 
-static const uint32 _wild_mouse_brakes_image_ids[4] = {
+static constexpr const uint32_t _wild_mouse_brakes_image_ids[4] = {
     SPR_WILD_MOUSE_BRAKES_SW_NE,
     SPR_WILD_MOUSE_BRAKES_NW_SE,
     SPR_WILD_MOUSE_BRAKES_SW_NE,
     SPR_WILD_MOUSE_BRAKES_NW_SE,
 };
 
-static const uint32 _wild_mouse_block_brakes_image_ids[4] = {
+static constexpr const uint32_t _wild_mouse_block_brakes_image_ids[4] = {
     SPR_WILD_MOUSE_BLOCK_BRAKES_SW_NE,
     SPR_WILD_MOUSE_BLOCK_BRAKES_NW_SE,
     SPR_WILD_MOUSE_BLOCK_BRAKES_SW_NE,
@@ -170,18 +163,23 @@ static const uint32 _wild_mouse_block_brakes_image_ids[4] = {
 };
 
 /** rct2: 0x0078B1E4 */
-static void wild_mouse_track_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction, sint32 height,
-                                  rct_tile_element * tileElement)
+static void wild_mouse_track_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_FLAT_SW_NE, SPR_WILD_MOUSE_FLAT_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_FLAT_NW_SE, SPR_WILD_MOUSE_FLAT_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_FLAT_SW_NE, SPR_WILD_MOUSE_FLAT_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_FLAT_NW_SE, SPR_WILD_MOUSE_FLAT_CHAIN_SE_NW },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
     if (track_paint_util_should_paint_supports(session->MapPosition))
     {
@@ -193,17 +191,22 @@ static void wild_mouse_track_flat(paint_session * session, uint8 rideIndex, uint
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void wild_mouse_track_station(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                     sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_station(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    [[maybe_unused]] uint8_t   trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 baseImageIds[4] = {
+    static constexpr const uint32_t baseImageIds[4] = {
         SPR_STATION_BASE_B_SW_NE,
         SPR_STATION_BASE_B_NW_SE,
         SPR_STATION_BASE_B_SW_NE,
         SPR_STATION_BASE_B_NW_SE,
     };
 
-    sint32 trackType = track_element_get_type(tileElement);
+    int32_t trackType = track_element_get_type(tileElement);
     sub_98197C_rotated(session, direction, baseImageIds[direction] | session->TrackColours[SCHEME_MISC], 0, 0, 32, 28, 2,
                        height - 2, 0, 2, height);
     if (trackType == TRACK_ELEM_END_STATION)
@@ -218,25 +221,30 @@ static void wild_mouse_track_station(paint_session * session, uint8 rideIndex, u
                            0, 32, 20, 2, height, 0, 0, height);
     }
     track_paint_util_draw_station_metal_supports(session, direction, height, session->TrackColours[SCHEME_SUPPORTS]);
-    track_paint_util_draw_station(session, rideIndex, trackSequence, direction, height, tileElement);
+    track_paint_util_draw_station(session, rideIndex, direction, height, tileElement);
     paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
 /** rct2: 0x0078B1F4 */
-static void wild_mouse_track_25_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                       sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_25_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_25_DEG_SW_NE, SPR_WILD_MOUSE_25_DEG_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_25_DEG_NW_SE, SPR_WILD_MOUSE_25_DEG_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_25_DEG_NE_SW, SPR_WILD_MOUSE_25_DEG_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_25_DEG_SE_NW, SPR_WILD_MOUSE_25_DEG_CHAIN_SE_NW },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
     if (track_paint_util_should_paint_supports(session->MapPosition))
     {
@@ -256,18 +264,23 @@ static void wild_mouse_track_25_deg_up(paint_session * session, uint8 rideIndex,
 }
 
 /** rct2: 0x0078B204 */
-static void wild_mouse_track_60_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                       sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_60_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_60_DEG_SW_NE, SPR_WILD_MOUSE_60_DEG_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_60_DEG_NW_SE, SPR_WILD_MOUSE_60_DEG_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_60_DEG_NE_SW, SPR_WILD_MOUSE_60_DEG_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_60_DEG_SE_NW, SPR_WILD_MOUSE_60_DEG_CHAIN_SE_NW },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     if (direction == 0 || direction == 3)
     {
         sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
@@ -301,18 +314,23 @@ static void wild_mouse_track_60_deg_up(paint_session * session, uint8 rideIndex,
 }
 
 /** rct2: 0x0078B214 */
-static void wild_mouse_track_flat_to_25_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                               sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_flat_to_25_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_FLAT_TO_25_DEG_SW_NE, SPR_WILD_MOUSE_FLAT_TO_25_DEG_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_FLAT_TO_25_DEG_NW_SE, SPR_WILD_MOUSE_FLAT_TO_25_DEG_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_FLAT_TO_25_DEG_NE_SW, SPR_WILD_MOUSE_FLAT_TO_25_DEG_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_FLAT_TO_25_DEG_SE_NW, SPR_WILD_MOUSE_FLAT_TO_25_DEG_CHAIN_SE_NW },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
     if (track_paint_util_should_paint_supports(session->MapPosition))
     {
@@ -332,25 +350,30 @@ static void wild_mouse_track_flat_to_25_deg_up(paint_session * session, uint8 ri
 }
 
 /** rct2: 0x0078B224 */
-static void wild_mouse_track_25_deg_up_to_60_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                    uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_25_deg_up_to_60_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_25_DEG_TO_60_DEG_SW_NE, SPR_WILD_MOUSE_25_DEG_TO_60_DEG_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_25_DEG_TO_60_DEG_NW_SE, SPR_WILD_MOUSE_25_DEG_TO_60_DEG_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_25_DEG_TO_60_DEG_NE_SW, SPR_WILD_MOUSE_25_DEG_TO_60_DEG_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_25_DEG_TO_60_DEG_SE_NW, SPR_WILD_MOUSE_25_DEG_TO_60_DEG_CHAIN_SE_NW },
     };
-    static const uint32 frontImageIds[4][2] = {
+    static constexpr const uint32_t frontImageIds[4][2] = {
         { 0, 0 },
         { SPR_WILD_MOUSE_25_DEG_TO_60_DEG_FRONT_NW_SE, SPR_WILD_MOUSE_25_DEG_TO_60_DEG_CHAIN_FRONT_NW_SE },
         { SPR_WILD_MOUSE_25_DEG_TO_60_DEG_FRONT_NE_SW, SPR_WILD_MOUSE_25_DEG_TO_60_DEG_CHAIN_FRONT_NE_SW },
         { 0, 0 },
     };
 
-    uint8  isChained    = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId      = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
-    uint32 frontImageId = frontImageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained    = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId      = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint32_t frontImageId = frontImageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     if (direction == 0 || direction == 3)
     {
         sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
@@ -378,25 +401,30 @@ static void wild_mouse_track_25_deg_up_to_60_deg_up(paint_session * session, uin
 }
 
 /** rct2: 0x0078B234 */
-static void wild_mouse_track_60_deg_up_to_25_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                    uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_60_deg_up_to_25_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_60_DEG_TO_25_DEG_SW_NE, SPR_WILD_MOUSE_60_DEG_TO_25_DEG_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_60_DEG_TO_25_DEG_NW_SE, SPR_WILD_MOUSE_60_DEG_TO_25_DEG_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_60_DEG_TO_25_DEG_NE_SW, SPR_WILD_MOUSE_60_DEG_TO_25_DEG_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_60_DEG_TO_25_DEG_SE_NW, SPR_WILD_MOUSE_60_DEG_TO_25_DEG_CHAIN_SE_NW },
     };
-    static const uint32 frontImageIds[4][2] = {
+    static constexpr const uint32_t frontImageIds[4][2] = {
         { 0, 0 },
         { SPR_WILD_MOUSE_60_DEG_TO_25_DEG_FRONT_NW_SE, SPR_WILD_MOUSE_60_DEG_TO_25_DEG_CHAIN_FRONT_NW_SE },
         { SPR_WILD_MOUSE_60_DEG_TO_25_DEG_FRONT_NE_SW, SPR_WILD_MOUSE_60_DEG_TO_25_DEG_CHAIN_FRONT_NE_SW },
         { 0, 0 },
     };
 
-    uint8  isChained    = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId      = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
-    uint32 frontImageId = frontImageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained    = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId      = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint32_t frontImageId = frontImageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     if (direction == 0 || direction == 3)
     {
         sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
@@ -424,18 +452,23 @@ static void wild_mouse_track_60_deg_up_to_25_deg_up(paint_session * session, uin
 }
 
 /** rct2: 0x0078B244 */
-static void wild_mouse_track_25_deg_up_to_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                               sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_25_deg_up_to_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_25_DEG_TO_FLAT_SW_NE, SPR_WILD_MOUSE_25_DEG_TO_FLAT_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_25_DEG_TO_FLAT_NW_SE, SPR_WILD_MOUSE_25_DEG_TO_FLAT_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_25_DEG_TO_FLAT_NE_SW, SPR_WILD_MOUSE_25_DEG_TO_FLAT_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_25_DEG_TO_FLAT_SE_NW, SPR_WILD_MOUSE_25_DEG_TO_FLAT_CHAIN_SE_NW },
     };
 
-    uint8  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId   = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
     if (track_paint_util_should_paint_supports(session->MapPosition))
     {
@@ -455,51 +488,86 @@ static void wild_mouse_track_25_deg_up_to_flat(paint_session * session, uint8 ri
 }
 
 /** rct2: 0x0078B254 */
-static void wild_mouse_track_25_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                         sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_25_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_25_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
 /** rct2: 0x0078B264 */
-static void wild_mouse_track_60_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                         sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_60_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_60_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
 /** rct2: 0x0078B274 */
-static void wild_mouse_track_flat_to_25_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_flat_to_25_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_25_deg_up_to_flat(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
 /** rct2: 0x0078B284 */
-static void wild_mouse_track_25_deg_down_to_60_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                        uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_25_deg_down_to_60_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_60_deg_up_to_25_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
 /** rct2: 0x0078B294 */
-static void wild_mouse_track_60_deg_down_to_25_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                        uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_60_deg_down_to_25_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_25_deg_up_to_60_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
 /** rct2: 0x0078B2A4 */
-static void wild_mouse_track_25_deg_down_to_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_25_deg_down_to_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_flat_to_25_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
-static void wild_mouse_track_right_quarter_turn_3(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                  uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_right_quarter_turn_3(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const sprite_bb imageIds[4][3] = {
+    static constexpr const sprite_bb imageIds[4][3] = {
         {
             { SPR_WILD_MOUSE_QUARTER_TURN_3_SW_SE_PART_0, { 0, 0, 0 }, { 0, 6, 0 }, { 32, 20, 3 } },
             { SPR_WILD_MOUSE_QUARTER_TURN_3_SW_SE_PART_1, { 0, 0, 0 }, { 16, 16, 0 }, { 16, 16, 3 } },
@@ -522,8 +590,8 @@ static void wild_mouse_track_right_quarter_turn_3(paint_session * session, uint8
         }
     };
 
-    track_paint_util_right_quarter_turn_3_tiles_paint_3(session, height, direction, get_current_rotation(), trackSequence,
-                                                        session->TrackColours[SCHEME_TRACK], imageIds);
+    track_paint_util_right_quarter_turn_3_tiles_paint_3(
+        session, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK], imageIds);
     track_paint_util_right_quarter_turn_3_tiles_tunnel(session, height, direction, trackSequence, TUNNEL_0);
 
     switch (trackSequence)
@@ -534,7 +602,7 @@ static void wild_mouse_track_right_quarter_turn_3(paint_session * session, uint8
         break;
     }
 
-    sint32 blockedSegments = 0;
+    int32_t blockedSegments = 0;
     switch (trackSequence)
     {
     case 0:
@@ -551,10 +619,15 @@ static void wild_mouse_track_right_quarter_turn_3(paint_session * session, uint8
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-static void wild_mouse_track_right_quarter_turn_3_25_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                              uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_right_quarter_turn_3_25_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const sprite_bb imageIds[4][2] = {
+    static constexpr const sprite_bb imageIds[4][2] = {
         {
             { SPR_WILD_MOUSE_QUARTER_TURN_3_25_DEG_DOWN_SW_SE_PART_0, { 0, 6, 0 }, { 0, 0, 0 }, { 32, 20, 3 } },
             { SPR_WILD_MOUSE_QUARTER_TURN_3_25_DEG_DOWN_SW_SE_PART_1, { 6, 0, 0 }, { 0, 0, 0 }, { 20, 32, 3 } },
@@ -572,15 +645,15 @@ static void wild_mouse_track_right_quarter_turn_3_25_deg_down(paint_session * se
             { SPR_WILD_MOUSE_QUARTER_TURN_3_25_DEG_DOWN_SE_NE_PART_1, { 0, 6, 0 }, { 0, 0, 0 }, { 32, 20, 3 } },
         }
     };
-    static const sint16 generalSupportHeights[] = { 72, 56, 56, 72 };
+    static constexpr const int16_t generalSupportHeights[] = { 72, 56, 56, 72 };
 
     if (trackSequence == 0 || trackSequence == 3)
     {
-        sint32            part = trackSequence == 0 ? 0 : 1;
+        int32_t            part = trackSequence == 0 ? 0 : 1;
         const sprite_bb * sbb  = &imageIds[direction][part];
-        sub_98196C(session, sbb->sprite_id | session->TrackColours[SCHEME_TRACK], (sint8)sbb->offset.x, (sint8)sbb->offset.y,
-                   sbb->bb_size.x, sbb->bb_size.y, (sint8)sbb->bb_size.z, height + (sint8)sbb->offset.z,
-                   get_current_rotation());
+        sub_98196C(
+            session, sbb->sprite_id | session->TrackColours[SCHEME_TRACK], (int8_t)sbb->offset.x, (int8_t)sbb->offset.y,
+            sbb->bb_size.x, sbb->bb_size.y, (int8_t)sbb->bb_size.z, height + (int8_t)sbb->offset.z);
     }
 
     track_paint_util_right_quarter_turn_3_tiles_25_deg_down_tunnel(session, height, direction, trackSequence, TUNNEL_2,
@@ -594,7 +667,7 @@ static void wild_mouse_track_right_quarter_turn_3_25_deg_down(paint_session * se
         break;
     }
 
-    sint32 blockedSegments = 0;
+    int32_t blockedSegments = 0;
     switch (trackSequence)
     {
     case 0:
@@ -608,8 +681,13 @@ static void wild_mouse_track_right_quarter_turn_3_25_deg_down(paint_session * se
     paint_util_set_general_support_height(session, height + generalSupportHeights[trackSequence], 0x20);
 }
 
-static void wild_mouse_track_left_quarter_turn_3_25_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                           uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_left_quarter_turn_3_25_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     trackSequence = mapLeftQuarterTurn3TilesToRightQuarterTurn3Tiles[trackSequence];
     wild_mouse_track_right_quarter_turn_3_25_deg_down(session, rideIndex, trackSequence, (direction + 1) % 4, height,
@@ -617,10 +695,15 @@ static void wild_mouse_track_left_quarter_turn_3_25_deg_up(paint_session * sessi
 }
 
 /** rct2: 0x0078B314 */
-static void wild_mouse_track_right_quarter_turn_3_25_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                            uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_right_quarter_turn_3_25_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const sprite_bb imageIds[4][2] = {
+    static constexpr const sprite_bb imageIds[4][2] = {
         {
             { SPR_WILD_MOUSE_QUARTER_TURN_3_25_DEG_UP_SW_SE_PART_0, { 0, 6, 0 }, { 0, 0, 0 }, { 32, 20, 3 } },
             { SPR_WILD_MOUSE_QUARTER_TURN_3_25_DEG_UP_SW_SE_PART_1, { 6, 0, 0 }, { 0, 0, 0 }, { 20, 32, 3 } },
@@ -638,15 +721,15 @@ static void wild_mouse_track_right_quarter_turn_3_25_deg_up(paint_session * sess
             { SPR_WILD_MOUSE_QUARTER_TURN_3_25_DEG_UP_SE_NE_PART_1, { 0, 6, 0 }, { 0, 0, 0 }, { 32, 20, 3 } },
         }
     };
-    static const sint16 generalSupportHeights[] = { 72, 56, 56, 72 };
+    static constexpr const int16_t generalSupportHeights[] = { 72, 56, 56, 72 };
 
     if (trackSequence == 0 || trackSequence == 3)
     {
-        sint32            part = trackSequence == 0 ? 0 : 1;
+        int32_t            part = trackSequence == 0 ? 0 : 1;
         const sprite_bb * sbb  = &imageIds[direction][part];
-        sub_98196C(session, sbb->sprite_id | session->TrackColours[SCHEME_TRACK], (sint8)sbb->offset.x, (sint8)sbb->offset.y,
-                   sbb->bb_size.x, sbb->bb_size.y, (sint8)sbb->bb_size.z, height + (sint8)sbb->offset.z,
-                   get_current_rotation());
+        sub_98196C(
+            session, sbb->sprite_id | session->TrackColours[SCHEME_TRACK], (int8_t)sbb->offset.x, (int8_t)sbb->offset.y,
+            sbb->bb_size.x, sbb->bb_size.y, (int8_t)sbb->bb_size.z, height + (int8_t)sbb->offset.z);
     }
 
     track_paint_util_right_quarter_turn_3_tiles_25_deg_up_tunnel(session, height, direction, trackSequence, TUNNEL_1, TUNNEL_2);
@@ -668,7 +751,7 @@ static void wild_mouse_track_right_quarter_turn_3_25_deg_up(paint_session * sess
         break;
     }
 
-    sint32 blockedSegments = 0;
+    int32_t blockedSegments = 0;
     switch (trackSequence)
     {
     case 0:
@@ -683,45 +766,60 @@ static void wild_mouse_track_right_quarter_turn_3_25_deg_up(paint_session * sess
 }
 
 /** rct2: 0x0078B324 */
-static void wild_mouse_track_left_quarter_turn_3_25_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                             uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_left_quarter_turn_3_25_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     trackSequence = mapLeftQuarterTurn3TilesToRightQuarterTurn3Tiles[trackSequence];
     wild_mouse_track_right_quarter_turn_3_25_deg_up(session, rideIndex, trackSequence, (direction + 1) % 4, height, tileElement);
 }
 
-static void wild_mouse_track_left_quarter_turn_3(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_left_quarter_turn_3(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     trackSequence = mapLeftQuarterTurn3TilesToRightQuarterTurn3Tiles[trackSequence];
     wild_mouse_track_right_quarter_turn_3(session, rideIndex, trackSequence, (direction + 1) % 4, height, tileElement);
 }
 
 /** rct2: 0x0078B394 */
-static void wild_mouse_track_left_quarter_turn_1(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_left_quarter_turn_1(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4] = {
+    static constexpr const uint32_t imageIds[4] = {
         SPR_WILD_MOUSE_QUARTER_TURN_1_SW_NE,
         SPR_WILD_MOUSE_QUARTER_TURN_1_NW_SE,
         SPR_WILD_MOUSE_QUARTER_TURN_1_NE_SW,
         SPR_WILD_MOUSE_QUARTER_TURN_1_SE_NW,
     };
 
-    uint32 imageId = imageIds[direction] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction] | session->TrackColours[SCHEME_TRACK];
     switch (direction)
     {
     case 0:
-        sub_98197C(session, imageId, 0, 0, 26, 24, 2, height, 6, 2, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 26, 24, 2, height, 6, 2, height);
         break;
     case 1:
-        sub_98196C(session, imageId, 0, 0, 26, 26, 2, height, get_current_rotation());
+        sub_98196C(session, imageId, 0, 0, 26, 26, 2, height);
         break;
     case 2:
-        sub_98197C(session, imageId, 0, 0, 24, 26, 2, height, 2, 6, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 24, 26, 2, height, 2, 6, height);
         break;
     case 3:
-        sub_98197C(session, imageId, 0, 0, 24, 24, 2, height, 6, 6, height, get_current_rotation());
+        sub_98197C(session, imageId, 0, 0, 24, 24, 2, height, 6, 6, height);
         break;
     }
     metal_a_supports_paint_setup(session, METAL_SUPPORTS_TUBES, 4, -1, height, session->TrackColours[SCHEME_SUPPORTS]);
@@ -732,32 +830,42 @@ static void wild_mouse_track_left_quarter_turn_1(paint_session * session, uint8 
 }
 
 /** rct2: 0x0078B3A4 */
-static void wild_mouse_track_right_quarter_turn_1(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                  uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_right_quarter_turn_1(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_left_quarter_turn_1(session, rideIndex, trackSequence, (direction - 1) & 3, height, tileElement);
 }
 
 /** rct2: 0x0078B354 */
-static void wild_mouse_track_flat_to_60_deg_up(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                               sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_flat_to_60_deg_up(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_FLAT_TO_60_DEG_SW_NE, SPR_WILD_MOUSE_FLAT_TO_60_DEG_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_FLAT_TO_60_DEG_NW_SE, SPR_WILD_MOUSE_FLAT_TO_60_DEG_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_FLAT_TO_60_DEG_NE_SW, SPR_WILD_MOUSE_FLAT_TO_60_DEG_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_FLAT_TO_60_DEG_SE_NW, SPR_WILD_MOUSE_FLAT_TO_60_DEG_CHAIN_SE_NW },
     };
-    static const uint32 frontImageIds[4][2] = {
+    static constexpr const uint32_t frontImageIds[4][2] = {
         { 0, 0 },
         { SPR_WILD_MOUSE_FLAT_TO_60_DEG_FRONT_NW_SE, SPR_WILD_MOUSE_FLAT_TO_60_DEG_CHAIN_FRONT_NW_SE },
         { SPR_WILD_MOUSE_FLAT_TO_60_DEG_FRONT_NE_SW, SPR_WILD_MOUSE_FLAT_TO_60_DEG_CHAIN_FRONT_NE_SW },
         { 0, 0 },
     };
 
-    uint8  isChained    = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId      = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
-    uint32 frontImageId = frontImageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained    = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId      = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint32_t frontImageId = frontImageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     if (direction == 0 || direction == 3)
     {
         sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 27, 2, height, 0, 2, height);
@@ -785,25 +893,30 @@ static void wild_mouse_track_flat_to_60_deg_up(paint_session * session, uint8 ri
 }
 
 /** rct2: 0x0078B364 */
-static void wild_mouse_track_60_deg_up_to_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                               sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_60_deg_up_to_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4][2] = {
+    static constexpr const uint32_t imageIds[4][2] = {
         { SPR_WILD_MOUSE_60_DEG_TO_FLAT_SW_NE, SPR_WILD_MOUSE_60_DEG_TO_FLAT_CHAIN_SW_NE },
         { SPR_WILD_MOUSE_60_DEG_TO_FLAT_NW_SE, SPR_WILD_MOUSE_60_DEG_TO_FLAT_CHAIN_NW_SE },
         { SPR_WILD_MOUSE_60_DEG_TO_FLAT_NE_SW, SPR_WILD_MOUSE_60_DEG_TO_FLAT_CHAIN_NE_SW },
         { SPR_WILD_MOUSE_60_DEG_TO_FLAT_SE_NW, SPR_WILD_MOUSE_60_DEG_TO_FLAT_CHAIN_SE_NW },
     };
-    static const uint32 frontImageIds[4][2] = {
+    static constexpr const uint32_t frontImageIds[4][2] = {
         { 0, 0 },
         { SPR_WILD_MOUSE_60_DEG_TO_FLAT_FRONT_NW_SE, SPR_WILD_MOUSE_60_DEG_TO_FLAT_CHAIN_FRONT_NW_SE },
         { SPR_WILD_MOUSE_60_DEG_TO_FLAT_FRONT_NE_SW, SPR_WILD_MOUSE_60_DEG_TO_FLAT_CHAIN_FRONT_NE_SW },
         { 0, 0 },
     };
 
-    uint8  isChained    = track_element_is_lift_hill(tileElement) ? 1 : 0;
-    uint32 imageId      = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
-    uint32 frontImageId = frontImageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint8_t  isChained    = track_element_is_lift_hill(tileElement) ? 1 : 0;
+    uint32_t imageId      = imageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
+    uint32_t frontImageId = frontImageIds[direction][isChained] | session->TrackColours[SCHEME_TRACK];
     if (direction == 0 || direction == 3)
     {
         sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 27, 2, height, 0, 2, height);
@@ -838,24 +951,39 @@ static void wild_mouse_track_60_deg_up_to_flat(paint_session * session, uint8 ri
 }
 
 /** rct2: 0x0078B374 */
-static void wild_mouse_track_flat_to_60_deg_down(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_flat_to_60_deg_down(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_60_deg_up_to_flat(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
 /** rct2: 0x0078B384 */
-static void wild_mouse_track_60_deg_down_to_flat(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                                 sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_60_deg_down_to_flat(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
     wild_mouse_track_flat_to_60_deg_up(session, rideIndex, trackSequence, (direction + 2) & 3, height, tileElement);
 }
 
 /** rct2: 0x0078B344 */
-static void wild_mouse_track_brakes(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                    sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_brakes(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    uint32 imageId = _wild_mouse_brakes_image_ids[direction] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = _wild_mouse_brakes_image_ids[direction] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
     if (track_paint_util_should_paint_supports(session->MapPosition))
     {
@@ -868,17 +996,22 @@ static void wild_mouse_track_brakes(paint_session * session, uint8 rideIndex, ui
 }
 
 /** rct2: 0x0078B3C4 */
-static void wild_mouse_track_rotation_control_toggle(paint_session * session, uint8 rideIndex, uint8 trackSequence,
-                                                     uint8 direction, sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_rotation_control_toggle(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    static const uint32 imageIds[4] = {
+    static constexpr const uint32_t imageIds[4] = {
         SPR_WILD_MOUSE_ROTATION_CONTROL_TOGGLE_SW_NE,
         SPR_WILD_MOUSE_ROTATION_CONTROL_TOGGLE_NW_SE,
         SPR_WILD_MOUSE_ROTATION_CONTROL_TOGGLE_SW_NE,
         SPR_WILD_MOUSE_ROTATION_CONTROL_TOGGLE_NW_SE,
     };
 
-    uint32 imageId = imageIds[direction] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = imageIds[direction] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
     if (track_paint_util_should_paint_supports(session->MapPosition))
     {
@@ -891,10 +1024,15 @@ static void wild_mouse_track_rotation_control_toggle(paint_session * session, ui
 }
 
 /** rct2: 0x0078B3B4 */
-static void wild_mouse_track_block_brakes(paint_session * session, uint8 rideIndex, uint8 trackSequence, uint8 direction,
-                                          sint32 height, rct_tile_element * tileElement)
+static void wild_mouse_track_block_brakes(
+    paint_session *          session,
+    uint8_t                    rideIndex,
+    uint8_t                    trackSequence,
+    uint8_t                    direction,
+    int32_t                   height,
+    const rct_tile_element * tileElement)
 {
-    uint32 imageId = _wild_mouse_block_brakes_image_ids[direction] | session->TrackColours[SCHEME_TRACK];
+    uint32_t imageId = _wild_mouse_block_brakes_image_ids[direction] | session->TrackColours[SCHEME_TRACK];
     sub_98197C_rotated(session, direction, imageId, 0, 0, 32, 20, 3, height, 0, 6, height);
     if (track_paint_util_should_paint_supports(session->MapPosition))
     {
@@ -906,7 +1044,7 @@ static void wild_mouse_track_block_brakes(paint_session * session, uint8 rideInd
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
 
-TRACK_PAINT_FUNCTION get_track_paint_function_wild_mouse(sint32 trackType, sint32 direction)
+TRACK_PAINT_FUNCTION get_track_paint_function_wild_mouse(int32_t trackType, int32_t direction)
 {
     switch (trackType)
     {
@@ -971,5 +1109,5 @@ TRACK_PAINT_FUNCTION get_track_paint_function_wild_mouse(sint32 trackType, sint3
     case TRACK_ELEM_BLOCK_BRAKES:
         return wild_mouse_track_block_brakes;
     }
-    return NULL;
+    return nullptr;
 }

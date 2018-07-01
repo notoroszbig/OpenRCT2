@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #ifndef DISABLE_NETWORK
 
@@ -20,7 +13,7 @@
 #include "NetworkConnection.h"
 #include "../core/String.hpp"
 
-#include "../localisation/localisation.h"
+#include "../localisation/Localisation.h"
 #include "../platform/platform.h"
 
 constexpr size_t NETWORK_DISCONNECT_REASON_BUFFER_SIZE = 256;
@@ -36,7 +29,7 @@ NetworkConnection::~NetworkConnection()
     delete[] _lastDisconnectReason;
 }
 
-sint32 NetworkConnection::ReadPacket()
+int32_t NetworkConnection::ReadPacket()
 {
     if (InboundPacket.BytesTransferred < sizeof(InboundPacket.Size))
     {
@@ -88,10 +81,10 @@ sint32 NetworkConnection::ReadPacket()
 
 bool NetworkConnection::SendPacket(NetworkPacket& packet)
 {
-    uint16 sizen = Convert::HostToNetwork(packet.Size);
-    std::vector<uint8> tosend;
+    uint16_t sizen = Convert::HostToNetwork(packet.Size);
+    std::vector<uint8_t> tosend;
     tosend.reserve(sizeof(sizen) + packet.Size);
-    tosend.insert(tosend.end(), (uint8*)&sizen, (uint8*)&sizen + sizeof(sizen));
+    tosend.insert(tosend.end(), (uint8_t*)&sizen, (uint8_t*)&sizen + sizeof(sizen));
     tosend.insert(tosend.end(), packet.Data->begin(), packet.Data->end());
 
     const void * buffer = &tosend[packet.BytesTransferred];
@@ -108,7 +101,7 @@ void NetworkConnection::QueuePacket(std::unique_ptr<NetworkPacket> packet, bool 
 {
     if (AuthStatus == NETWORK_AUTH_OK || !packet->CommandRequiresAuth())
     {
-        packet->Size = (uint16)packet->Data->size();
+        packet->Size = (uint16_t)packet->Data->size();
         if (front)
         {
             // If the first packet was already partially sent add new packet to second position

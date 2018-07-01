@@ -1,33 +1,27 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
+#include <algorithm>
 #ifndef _WIN32
     #include <dirent.h>
 #endif
 
 #include "../platform/platform.h"
-#include "../localisation/localisation.h"
 #include "../util/Util.h"
+#include "../localisation/Language.h"
 
 #include "File.h"
 #include "Math.hpp"
 #include "Memory.hpp"
 #include "Path.hpp"
-#include "String.hpp"
 #include "Util.hpp"
+#include "String.hpp"
 
 namespace Path
 {
@@ -64,7 +58,7 @@ namespace Path
 
     utf8 * GetDirectory(utf8 * buffer, size_t bufferSize, const utf8 * path)
     {
-        auto lastPathSepIndex = Math::Max(
+        auto lastPathSepIndex = std::max(
             String::LastIndexOf(path, *PATH_SEPARATOR),
             String::LastIndexOf(path, '/')
         );
@@ -73,8 +67,8 @@ namespace Path
             return String::Set(buffer, bufferSize, String::Empty);
         }
 
-        size_t copyLength = Math::Min(lastPathSepIndex, static_cast<ptrdiff_t>(bufferSize - 1));
-        Memory::Copy(buffer, path, copyLength);
+        size_t copyLength = std::min(lastPathSepIndex, static_cast<ptrdiff_t>(bufferSize - 1));
+        std::copy_n(path, copyLength, buffer);
         buffer[copyLength] = '\0';
         return buffer;
     }
@@ -82,6 +76,11 @@ namespace Path
     void CreateDirectory(const std::string &path)
     {
         platform_ensure_directory_exists(path.c_str());
+    }
+
+    bool DirectoryExists(const std::string &path)
+    {
+        return platform_directory_exists(path.c_str());
     }
 
     std::string GetFileName(const std::string &path)
@@ -142,8 +141,8 @@ namespace Path
             return String::Set(buffer, bufferSize, path);
         }
 
-        size_t truncatedLength = Math::Min<size_t>(bufferSize - 1, lastDot - path);
-        Memory::Copy(buffer, path, truncatedLength);
+        size_t truncatedLength = std::min<size_t>(bufferSize - 1, lastDot - path);
+        std::copy_n(path, truncatedLength, buffer);
         buffer[truncatedLength] = '\0';
         return buffer;
     }
@@ -156,7 +155,7 @@ namespace Path
     const utf8 * GetExtension(const utf8 * path)
     {
         const utf8 * lastDot = nullptr;
-        const utf8 * ch = path;
+        const utf8 * ch = GetFileName(path);
         for (; *ch != '\0'; ch++)
         {
             if (*ch == '.')
@@ -208,6 +207,12 @@ namespace Path
 #endif
     }
 
+    std::string GetAbsolute(const std::string &relative)
+    {
+        utf8 absolute[MAX_PATH];
+        return GetAbsolute(absolute, sizeof(absolute), relative.c_str());
+    }
+
     bool Equals(const std::string &a, const std::string &b)
     {
         return String::Equals(a.c_str(), b.c_str());
@@ -242,7 +247,7 @@ namespace Path
             if (count != -1)
             {
                 // Find a file which matches by name (case insensitive)
-                for (sint32 i = 0; i < count; i++)
+                for (int32_t i = 0; i < count; i++)
                 {
                     if (String::Equals(files[i]->d_name, fileName.c_str(), true))
                     {
@@ -252,7 +257,7 @@ namespace Path
                 }
 
                 // Free memory
-                for (sint32 i = 0; i < count; i++)
+                for (int32_t i = 0; i < count; i++)
                 {
                     free(files[i]);
                 }
@@ -262,4 +267,4 @@ namespace Path
 #endif
         return result;
     }
-}
+} // namespace Path

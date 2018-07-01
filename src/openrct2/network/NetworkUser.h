@@ -1,22 +1,13 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #pragma once
-
-#ifdef __cplusplus
 
 #include "../common.h"
 #include "../core/Nullable.hpp"
@@ -30,7 +21,7 @@ class NetworkUser final
 public:
     std::string         Hash;
     std::string         Name;
-    Nullable<uint8>     GroupId;
+    Nullable<uint8_t>     GroupId;
     bool                Remove;
 
     static NetworkUser * FromJson(json_t * json);
@@ -54,7 +45,7 @@ public:
      */
     void Save();
 
-    void UnsetUsersOfGroup(uint8 groupId);
+    void UnsetUsersOfGroup(uint8_t groupId);
     void RemoveUser(const std::string &hash);
 
     NetworkUser * GetUserByHash(const std::string &hash);
@@ -68,5 +59,3 @@ private:
     void DisposeUsers();
     static void GetStorePath(utf8 * buffer, size_t bufferSize);
 };
-
-#endif

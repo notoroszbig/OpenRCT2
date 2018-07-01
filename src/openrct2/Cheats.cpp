@@ -1,35 +1,30 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
+#include "actions/ParkSetLoanAction.hpp"
 #include "Cheats.h"
 #include "config/Config.h"
-#include "Editor.h"
-#include "Game.h"
-#include "interface/window.h"
-#include "localisation/localisation.h"
-#include "management/Finance.h"
+#include "GameState.h"
+#include "localisation/Localisation.h"
 #include "network/network.h"
-#include "ride/Station.h"
+#include "ride/Ride.h"
+#include "scenario/Scenario.h"
 #include "util/Util.h"
 #include "world/Climate.h"
-#include "world/footpath.h"
-#include "world/map.h"
-#include "world/park.h"
-#include "world/scenery.h"
-#include "world/sprite.h"
+#include "world/Footpath.h"
+#include "world/Map.h"
+#include "world/Park.h"
+#include "world/Scenery.h"
+#include "world/Sprite.h"
+#include "world/Surface.h"
+
+using namespace OpenRCT2;
 
 bool gCheatsSandboxMode = false;
 bool gCheatsDisableClearanceChecks = false;
@@ -53,25 +48,28 @@ bool gCheatsDisableRideValueAging = false;
 bool gCheatsIgnoreResearchStatus = false;
 bool gCheatsEnableAllDrawableTrackPieces = false;
 
-sint32 park_rating_spinner_value;
+int32_t park_rating_spinner_value;
+int32_t year_spinner_value = 1;
+int32_t month_spinner_value = 1;
+int32_t day_spinner_value = 1;
 
 #pragma region Cheat functions
 
-static void cheat_set_grass_length(sint32 length)
+static void cheat_set_grass_length(int32_t length)
 {
-    sint32 x, y;
+    int32_t x, y;
     rct_tile_element *tileElement;
 
-    for (y = 0; y < 256; y++) {
-        for (x = 0; x < 256; x++) {
+    for (y = 0; y < MAXIMUM_MAP_SIZE_TECHNICAL; y++) {
+        for (x = 0; x < MAXIMUM_MAP_SIZE_TECHNICAL; x++) {
             tileElement = map_get_surface_element_at(x, y);
             if (!(tileElement->properties.surface.ownership & OWNERSHIP_OWNED))
                 continue;
 
-            if (tile_element_get_terrain(tileElement) != TERRAIN_GRASS)
+            if (surface_get_terrain(tileElement) != TERRAIN_GRASS)
                 continue;
 
-            if (map_get_water_height(tileElement) > 0)
+            if (surface_get_water_height(tileElement) > 0)
                 continue;
 
             tileElement->properties.surface.grass_length = length;
@@ -87,7 +85,7 @@ static void cheat_water_plants()
 
     tile_element_iterator_begin(&it);
     do {
-        if (tile_element_get_type(it.element) == TILE_ELEMENT_TYPE_SMALL_SCENERY) {
+        if (it.element->GetType() == TILE_ELEMENT_TYPE_SMALL_SCENERY) {
             it.element->properties.scenery.age = 0;
         }
     } while (tile_element_iterator_next(&it));
@@ -101,7 +99,7 @@ static void cheat_fix_vandalism()
 
     tile_element_iterator_begin(&it);
     do {
-        if (tile_element_get_type(it.element) != TILE_ELEMENT_TYPE_PATH)
+        if (it.element->GetType() != TILE_ELEMENT_TYPE_PATH)
             continue;
 
         if (!footpath_element_has_path_scenery(it.element))
@@ -116,7 +114,7 @@ static void cheat_fix_vandalism()
 static void cheat_remove_litter()
 {
     rct_litter* litter;
-    uint16 spriteIndex, nextSpriteIndex;
+    uint16_t spriteIndex, nextSpriteIndex;
 
     for (spriteIndex = gSpriteListHead[SPRITE_LIST_LITTER]; spriteIndex != SPRITE_INDEX_NULL; spriteIndex = nextSpriteIndex) {
         litter = &(get_sprite(spriteIndex)->litter);
@@ -129,7 +127,7 @@ static void cheat_remove_litter()
 
     tile_element_iterator_begin(&it);
     do {
-        if (tile_element_get_type(it.element) != TILE_ELEMENT_TYPE_PATH)
+        if (it.element->GetType() != TILE_ELEMENT_TYPE_PATH)
             continue;
 
         if (!footpath_element_has_path_scenery(it.element))
@@ -146,7 +144,7 @@ static void cheat_remove_litter()
 
 static void cheat_fix_rides()
 {
-    sint32 rideIndex;
+    int32_t rideIndex;
     Ride *ride;
     rct_peep *mechanic;
 
@@ -156,8 +154,8 @@ static void cheat_fix_rides()
         {
             mechanic = ride_get_assigned_mechanic(ride);
 
-            if (mechanic != NULL){
-                remove_peep_from_ride(mechanic);
+            if (mechanic != nullptr){
+                mechanic->RemoveFromRide();
             }
 
             ride_fix_breakdown(rideIndex, 0);
@@ -168,22 +166,19 @@ static void cheat_fix_rides()
 
 static void cheat_renew_rides()
 {
-    sint32 i;
+    int32_t i;
     Ride *ride;
 
     FOR_ALL_RIDES(i, ride)
     {
-        // Set build date to current date (so the ride is brand new)
-        ride->build_date = gDateMonthsElapsed;
-        // Set reliability to 100
-        ride->reliability = RIDE_INITIAL_RELIABILITY;
+        ride_renew(ride);
     }
     window_invalidate_by_class(WC_RIDE);
 }
 
 static void cheat_make_destructible()
 {
-    sint32 i;
+    int32_t i;
     Ride *ride;
     FOR_ALL_RIDES(i, ride)
     {
@@ -197,7 +192,7 @@ static void cheat_make_destructible()
 
 static void cheat_reset_crash_status()
 {
-    sint32 i;
+    int32_t i;
     Ride *ride;
 
     FOR_ALL_RIDES(i, ride){
@@ -212,7 +207,7 @@ static void cheat_reset_crash_status()
 
 static void cheat_10_minute_inspections()
 {
-    sint32 i;
+    int32_t i;
     Ride *ride;
 
     FOR_ALL_RIDES(i, ride) {
@@ -262,22 +257,23 @@ static void cheat_clear_loan()
     cheat_add_money(gBankLoan);
 
     // Then pay the loan
-    money32 newLoan;
-    newLoan = MONEY(0, 00);
-    game_do_command(0, GAME_COMMAND_FLAG_APPLY, 0, newLoan, GAME_COMMAND_SET_CURRENT_LOAN, 0, 0);
+    auto gameAction = ParkSetLoanAction(MONEY(0, 00));
+    GameActions::Execute(&gameAction);
 }
 
-static void cheat_generate_guests(sint32 count)
+static void cheat_generate_guests(int32_t count)
 {
-    for (sint32 i = 0; i < count; i++)
-        park_generate_new_guest();
-
+    auto& park = GetContext()->GetGameState()->GetPark();
+    for (int32_t i = 0; i < count; i++)
+    {
+        park.GenerateGuest();
+    }
     window_invalidate_by_class(WC_BOTTOM_TOOLBAR);
 }
 
-static void cheat_set_guest_parameter(sint32 parameter, sint32 value)
+static void cheat_set_guest_parameter(int32_t parameter, int32_t value)
 {
-    sint32 spriteIndex;
+    int32_t spriteIndex;
     rct_peep *peep;
 
     FOR_ALL_GUESTS(spriteIndex, peep) {
@@ -310,20 +306,20 @@ static void cheat_set_guest_parameter(sint32 parameter, sint32 value)
             peep->nausea_tolerance = value;
             break;
         case GUEST_PARAMETER_BATHROOM:
-            peep->bathroom = value;
+            peep->toilet = value;
             break;
         case GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY:
             peep->intensity = (15 << 4) | value;
             break;
         }
-        peep_update_sprite_type(peep);
+        peep->UpdateSpriteType();
     }
 
 }
 
-static void cheat_give_all_guests(sint32 object)
+static void cheat_give_all_guests(int32_t object)
 {
-    sint32 spriteIndex;
+    int32_t spriteIndex;
     rct_peep *peep;
 
     FOR_ALL_GUESTS(spriteIndex, peep) {
@@ -338,12 +334,12 @@ static void cheat_give_all_guests(sint32 object)
             case OBJECT_BALLOON:
                 peep->item_standard_flags |= PEEP_ITEM_BALLOON;
                 peep->balloon_colour = scenario_rand_max(COLOUR_COUNT - 1);
-                peep_update_sprite_type(peep);
+                peep->UpdateSpriteType();
                 break;
             case OBJECT_UMBRELLA:
                 peep->item_standard_flags |= PEEP_ITEM_UMBRELLA;
                 peep->umbrella_colour = scenario_rand_max(COLOUR_COUNT - 1);
-                peep_update_sprite_type(peep);
+                peep->UpdateSpriteType();
                 break;
         }
     }
@@ -354,17 +350,8 @@ static void cheat_remove_all_guests()
 {
     rct_peep *peep;
     rct_vehicle *vehicle;
-    uint16 spriteIndex, nextSpriteIndex;
-
-    for (spriteIndex = gSpriteListHead[SPRITE_LIST_PEEP]; spriteIndex != SPRITE_INDEX_NULL; spriteIndex = nextSpriteIndex) {
-        peep = &(get_sprite(spriteIndex)->peep);
-        nextSpriteIndex = peep->next;
-        if (peep->type == PEEP_TYPE_GUEST) {
-            peep_remove(peep);
-        }
-    }
-
-    sint32 rideIndex;
+    uint16_t spriteIndex, nextSpriteIndex;
+    int32_t rideIndex;
     Ride *ride;
 
     FOR_ALL_RIDES(rideIndex, ride)
@@ -383,17 +370,34 @@ static void cheat_remove_all_guests()
             while (spriteIndex != SPRITE_INDEX_NULL)
             {
                 vehicle = GET_VEHICLE(spriteIndex);
-
-                vehicle->num_peeps = 0;
-                vehicle->next_free_seat = 0;
+                for (size_t i = 0, offset = 0; i < vehicle->num_peeps; i++) 
+                {
+                    while (vehicle->peep[i + offset] == SPRITE_INDEX_NULL)
+                    {
+                        offset++;
+                    }
+                    peep = GET_PEEP(vehicle->peep[i + offset]);
+                    vehicle->mass -= peep->mass;
+                }
 
                 for (auto &peepInTrainIndex : vehicle->peep)
                 {
                     peepInTrainIndex = SPRITE_INDEX_NULL;
                 }
 
+                vehicle->num_peeps = 0;
+                vehicle->next_free_seat = 0;
+
                 spriteIndex = vehicle->next_vehicle_on_train;
             }
+        }
+    }
+
+    for (spriteIndex = gSpriteListHead[SPRITE_LIST_PEEP]; spriteIndex != SPRITE_INDEX_NULL; spriteIndex = nextSpriteIndex) {
+        peep = &(get_sprite(spriteIndex)->peep);
+        nextSpriteIndex = peep->next;
+        if (peep->type == PEEP_TYPE_GUEST) {
+            peep->Remove();
         }
     }
 
@@ -403,29 +407,19 @@ static void cheat_remove_all_guests()
 
 static void cheat_explode_guests()
 {
-    sint32 sprite_index;
+    int32_t sprite_index;
     rct_peep *peep;
 
     FOR_ALL_GUESTS(sprite_index, peep) {
-        // To prevent blowing up peeps that will break
-        // ride vehicle logic.
-        if (peep->state == PEEP_STATE_ENTERING_RIDE ||
-            peep->state == PEEP_STATE_QUEUING_FRONT ||
-            peep->state == PEEP_STATE_LEAVING_RIDE ||
-            peep->state == PEEP_STATE_ON_RIDE ||
-            peep->state == PEEP_STATE_QUEUING) {
-            continue;
-        }
-
         if (scenario_rand_max(6) == 0) {
             peep->peep_flags |= PEEP_FLAGS_EXPLODE;
         }
     }
 }
 
-static void cheat_set_staff_speed(uint8 value)
+static void cheat_set_staff_speed(uint8_t value)
 {
-    uint16 spriteIndex;
+    uint16_t spriteIndex;
     rct_peep *peep;
 
     FOR_ALL_STAFF(spriteIndex, peep) {
@@ -436,38 +430,39 @@ static void cheat_set_staff_speed(uint8 value)
 
 static void cheat_own_all_land()
 {
-    sint32 min = 32;
-    sint32 max = gMapSizeUnits - 32;
-    for (sint32 y = min; y <= max; y += 32) {
-        for (sint32 x = min; x <= max; x += 32) {
-            rct_tile_element * surfaceElement = map_get_surface_element_at(x >> 5, y >> 5);
+    const int32_t min = 32;
+    const int32_t max = gMapSizeUnits - 32;
+
+    for (CoordsXY coords = {min, min}; coords.y <= max; coords.y += 32) {
+        for (coords.x = min; coords.x <= max; coords.x += 32) {
+            rct_tile_element * surfaceElement = map_get_surface_element_at(coords);
 
             // Ignore already owned tiles.
             if (surfaceElement->properties.surface.ownership & OWNERSHIP_OWNED)
                 continue;
 
-            sint32 base_z = surfaceElement->base_height;
-            sint32 destOwnership = check_max_allowable_land_rights_for_tile(x >> 5, y >> 5, base_z);
+            int32_t base_z = surfaceElement->base_height;
+            int32_t destOwnership = check_max_allowable_land_rights_for_tile(coords.x >> 5, coords.y >> 5, base_z);
 
             // only own tiles that were not set to 0
             if (destOwnership != OWNERSHIP_UNOWNED) {
                 surfaceElement->properties.surface.ownership |= destOwnership;
-                update_park_fences_around_tile(x, y);
-                uint16 baseHeight = surfaceElement->base_height * 8;
-                map_invalidate_tile(x, y, baseHeight, baseHeight + 16);
+                update_park_fences_around_tile(coords);
+                uint16_t baseHeight = surfaceElement->base_height * 8;
+                map_invalidate_tile(coords.x, coords.y, baseHeight, baseHeight + 16);
             }
         }
     }
 
     // Completely unown peep spawn points
     for (const auto &spawn : gPeepSpawns) {
-        sint32 x = spawn.x;
-        sint32 y = spawn.y;
+        int32_t x = spawn.x;
+        int32_t y = spawn.y;
         if (x != PEEP_SPAWN_UNDEFINED) {
-            rct_tile_element * surfaceElement = map_get_surface_element_at(x >> 5, y >> 5);
+            rct_tile_element * surfaceElement = map_get_surface_element_at({x, y});
             surfaceElement->properties.surface.ownership = OWNERSHIP_UNOWNED;
-            update_park_fences_around_tile(x, y);
-            uint16 baseHeight = surfaceElement->base_height * 8;
+            update_park_fences_around_tile({x, y});
+            uint16_t baseHeight = surfaceElement->base_height * 8;
             map_invalidate_tile(x, y, baseHeight, baseHeight + 16);
         }
     }
@@ -477,9 +472,16 @@ static void cheat_own_all_land()
 
 #pragma endregion
 
-void game_command_cheat(sint32* eax, sint32* ebx, sint32* ecx, sint32* edx, sint32* esi, sint32* edi, sint32* ebp)
+void game_command_cheat(
+    [[maybe_unused]] int32_t * eax,
+    int32_t *                  ebx,
+    int32_t *                  ecx,
+    int32_t *                  edx,
+    [[maybe_unused]] int32_t * esi,
+    int32_t *                  edi,
+    [[maybe_unused]] int32_t * ebp)
 {
-    sint32 cheat = *ecx;
+    int32_t cheat = *ecx;
     if (*ebx & GAME_COMMAND_FLAG_APPLY)
     {
         switch (cheat)

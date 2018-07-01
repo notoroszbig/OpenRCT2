@@ -1,29 +1,26 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #pragma once
 
+#include "../common.h"
 #include "../core/MemoryStream.h"
-#include "../localisation/string_ids.h"
+#include "../localisation/Localisation.h"
+#include "../localisation/StringIds.h"
 #include "GameAction.h"
 
 #include "../Cheats.h"
-#include "../interface/window.h"
-#include "../world/park.h"
-#include "../ride/ride.h"
+#include "../interface/Window.h"
+#include "../management/Finance.h"
+#include "../world/Park.h"
+#include "../world/Sprite.h"
+#include "../ride/Ride.h"
 
 static rct_string_id _StatusErrorTitles[] =
 {
@@ -35,18 +32,18 @@ static rct_string_id _StatusErrorTitles[] =
 struct RideSetStatusAction : public GameActionBase<GAME_COMMAND_SET_RIDE_STATUS, GameActionResult>
 {
 private:
-    sint32 _rideIndex = -1;
-    uint8 _status = RIDE_STATUS_CLOSED;
+    int32_t _rideIndex = -1;
+    uint8_t _status = RIDE_STATUS_CLOSED;
 
 public:
     RideSetStatusAction() {}
-    RideSetStatusAction(uint8 rideIndex, uint8 status) :
+    RideSetStatusAction(uint8_t rideIndex, uint8_t status) :
         _rideIndex(rideIndex),
         _status(status)
     {
     }
 
-    uint16 GetActionFlags() const override
+    uint16_t GetActionFlags() const override
     {
         return GameAction::GetActionFlags() | GA_FLAGS::ALLOW_WHILE_PAUSED;
     }
@@ -63,8 +60,8 @@ public:
         GameActionResult::Ptr res = std::make_unique<GameActionResult>();
         Ride *ride = get_ride(_rideIndex);
         res->ErrorTitle = _StatusErrorTitles[_status];
-        set_format_arg_on(res->ErrorMessageArgs, 6, rct_string_id, ride->name);
-        set_format_arg_on(res->ErrorMessageArgs, 8, uint32, ride->name_arguments);
+        set_format_arg_on(res->ErrorMessageArgs.data(), 6, rct_string_id, ride->name);
+        set_format_arg_on(res->ErrorMessageArgs.data(), 8, uint32_t, ride->name_arguments);
 
         if (_rideIndex >= MAX_RIDES || _rideIndex < 0)
         {
@@ -104,8 +101,8 @@ public:
 
         Ride *ride = get_ride(_rideIndex);
         res->ErrorTitle = _StatusErrorTitles[_status];
-        set_format_arg_on(res->ErrorMessageArgs, 6, rct_string_id, ride->name);
-        set_format_arg_on(res->ErrorMessageArgs, 8,uint32, ride->name_arguments);
+        set_format_arg_on(res->ErrorMessageArgs.data(), 6, rct_string_id, ride->name);
+        set_format_arg_on(res->ErrorMessageArgs.data(), 8,uint32_t, ride->name_arguments);
 
         if (ride->type == RIDE_TYPE_NULL)
         {

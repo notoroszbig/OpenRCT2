@@ -1,21 +1,16 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #ifndef _SPRITES_H_
 #define _SPRITES_H_
+
+#include "rct1/RCT1.h"
 
 enum {
     SPR_NONE = -1,
@@ -99,7 +94,7 @@ enum {
     SPR_SHOP_ITEM_MEATBALL_SOUP = 5100,
     SPR_SHOP_ITEM_FRUIT_JUICE = 5101,
     SPR_SHOP_ITEM_SOYBEAN_MILK = 5102,
-    SPR_SHOP_ITEM_SU_JONGKWA = 5103,
+    SPR_SHOP_ITEM_SUJEONGGWA = 5103,
     SPR_SHOP_ITEM_SUB_SANDWICH = 5104,
     SPR_SHOP_ITEM_COOKIE = 5105,
     SPR_SHOP_ITEM_EMPTY_BOWL_RED = 5106,
@@ -804,9 +799,9 @@ enum {
 
     SPR_G2_MINI_RC_BOOSTER_NE_SW = SPR_G2_BEGIN + 91,
     SPR_G2_MINI_RC_BOOSTER_NW_SE = SPR_G2_BEGIN + 92,
-        
+
     SPR_G2_MINIATURE_RAILWAY_QUARTER_TURN_3_TILES_SW_SE_PART_3 = SPR_G2_BEGIN + 93,
-        
+
     SPR_G2_MINIATURE_RAILWAY_BEGIN              = SPR_G2_BEGIN + 94,
     SPR_G2_MINIATURE_RAILWAY_GRAVEL_SW_NE       = SPR_G2_MINIATURE_RAILWAY_BEGIN + 0,
     SPR_G2_MINIATURE_RAILWAY_GRAVEL_NW_SE       = SPR_G2_MINIATURE_RAILWAY_BEGIN + 1,
@@ -821,6 +816,29 @@ enum {
     SPR_G2_MINIATURE_RAILWAY_INSET_END_SW_NE    = SPR_G2_MINIATURE_RAILWAY_BEGIN + 10,
     SPR_G2_MINIATURE_RAILWAY_INSET_END_NW_SE    = SPR_G2_MINIATURE_RAILWAY_BEGIN + 11,
     SPR_G2_MINIATURE_RAILWAY_LAST               = SPR_G2_BEGIN + 105,
+
+    SPR_G2_SEARCH = SPR_G2_BEGIN + 106,
+
+    SPR_G2_SURFACE_GLASSY_RECOLOURABLE = SPR_G2_BEGIN + 107,
+
+    SPR_G2_SELECTION_EDGE_NW = SPR_G2_BEGIN + 108,
+    SPR_G2_SELECTION_EDGE_NE = SPR_G2_BEGIN + 109,
+    SPR_G2_SELECTION_EDGE_SW = SPR_G2_BEGIN + 110,
+    SPR_G2_SELECTION_EDGE_SE = SPR_G2_BEGIN + 111,
+
+    SPR_G2_WALL_TEXTURE_BRICK = SPR_G2_BEGIN + 112,
+    SPR_G2_WALL_TEXTURE_IRON = SPR_G2_BEGIN + 113,
+    SPR_G2_WALL_TEXTURE_GREY = SPR_G2_BEGIN + 114,
+    SPR_G2_WALL_TEXTURE_YELLOW = SPR_G2_BEGIN + 115,
+    SPR_G2_WALL_TEXTURE_RED = SPR_G2_BEGIN + 116,
+    SPR_G2_WALL_TEXTURE_PURPLE = SPR_G2_BEGIN + 117,
+    SPR_G2_WALL_TEXTURE_GREEN = SPR_G2_BEGIN + 118,
+    SPR_G2_WALL_TEXTURE_STONE_BROWN = SPR_G2_BEGIN + 119,
+    SPR_G2_WALL_TEXTURE_STONE_GREY = SPR_G2_BEGIN + 120,
+    SPR_G2_WALL_TEXTURE_SKYSCRAPER_A = SPR_G2_BEGIN + 121,
+    SPR_G2_WALL_TEXTURE_SKYSCRAPER_B = SPR_G2_BEGIN + 122,
+    
+    SPR_G2_EYEDROPPER = SPR_G2_BEGIN + 123,
 
     // 0x60000, chosen because it's a round hex number
     // of the last possible range of image ID values that is large enough to fit all csg1 sprites.
@@ -837,6 +855,25 @@ enum {
     SPR_CSG_EDGE_STONE_GREY_BASE = SPR_CSG_BEGIN + 41550,
     SPR_CSG_EDGE_SKYSCRAPER_A_BASE = SPR_CSG_BEGIN + 41654,
     SPR_CSG_EDGE_SKYSCRAPER_B_BASE = SPR_CSG_BEGIN + 41758,
+
+    SPR_CSG_WALL_TEXTURE_BRICK = SPR_CSG_BEGIN + 47365,
+    SPR_CSG_WALL_TEXTURE_IRON = SPR_CSG_BEGIN + 47366,
+    SPR_CSG_WALL_TEXTURE_GREY = SPR_CSG_BEGIN + 47368,
+    SPR_CSG_WALL_TEXTURE_YELLOW = SPR_CSG_BEGIN + 47369,
+    SPR_CSG_WALL_TEXTURE_RED = SPR_CSG_BEGIN + 47371,
+    SPR_CSG_WALL_TEXTURE_PURPLE = SPR_CSG_BEGIN + 47373,
+    SPR_CSG_WALL_TEXTURE_GREEN = SPR_CSG_BEGIN + 47374,
+    SPR_CSG_WALL_TEXTURE_STONE_BROWN = SPR_CSG_BEGIN + 47375,
+    SPR_CSG_WALL_TEXTURE_STONE_GREY = SPR_CSG_BEGIN + 47376,
+    SPR_CSG_WALL_TEXTURE_SKYSCRAPER_A = SPR_CSG_BEGIN + 47377,
+    SPR_CSG_WALL_TEXTURE_SKYSCRAPER_B = SPR_CSG_BEGIN + 47378,
+
+    SPR_CSG_ICE_CREAM_STALL_BEGIN = SPR_CSG_BEGIN + 60625,
+    SPR_CSG_TOILETS_BEGIN = SPR_CSG_BEGIN + 61289,
+
+    SPR_CSG_RIDE_PREVIEWS_BEGIN = SPR_CSG_BEGIN + 64195,
+    SPR_CSG_RIDE_PREVIEW_ICE_CREAM_STALL = SPR_CSG_RIDE_PREVIEWS_BEGIN + RCT1_RIDE_TYPE_ICE_CREAM_STALL,
+    SPR_CSG_RIDE_PREVIEW_TOILETS = SPR_CSG_RIDE_PREVIEWS_BEGIN + RCT1_RIDE_TYPE_TOILETS,
 };
 
 #endif

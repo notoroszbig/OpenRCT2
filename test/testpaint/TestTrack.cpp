@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <string>
 #include <vector>
@@ -29,9 +22,9 @@
 #include "Utils.hpp"
 #include "VerticalTunnelCall.hpp"
 
-#include <openrct2/paint/tile_element/TileElement.h>
+#include <openrct2/paint/tile_element/Paint.TileElement.h>
 #include <openrct2/paint/Supports.h>
-#include <openrct2/ride/ride.h>
+#include <openrct2/ride/Ride.h>
 #include <openrct2/ride/Track.h>
 #include <openrct2/ride/TrackData.h>
 
@@ -39,13 +32,13 @@ interface ITestTrackFilter {
 public:
     virtual ~ITestTrackFilter() {}
 
-    virtual bool AppliesTo(uint8 rideType, uint8 trackType) abstract;
+    virtual bool AppliesTo(uint8_t rideType, uint8_t trackType) abstract;
 
-    virtual int Variations(uint8 rideType, uint8 trackType) abstract;
+    virtual int Variations(uint8_t rideType, uint8_t trackType) abstract;
 
-    virtual std::string VariantName(uint8 rideType, uint8 trackType, int variant) abstract;
+    virtual std::string VariantName(uint8_t rideType, uint8_t trackType, int variant) abstract;
 
-    virtual void ApplyTo(uint8 rideType, uint8 trackType, int variant,
+    virtual void ApplyTo(uint8_t rideType, uint8_t trackType, int variant,
                          rct_tile_element *tileElement, rct_tile_element *surfaceElement,
                          Ride *ride, rct_ride_entry *rideEntry
     ) abstract;
@@ -53,19 +46,19 @@ public:
 
 class CableLiftFilter : public ITestTrackFilter {
 public:
-    bool AppliesTo(uint8 rideType, uint8 trackType) override {
+    bool AppliesTo(uint8_t rideType, uint8_t trackType) override {
         return rideType == RIDE_TYPE_GIGA_COASTER;
     }
 
-    int Variations(uint8 rideType, uint8 trackType) override {
+    int Variations(uint8_t rideType, uint8_t trackType) override {
         return 2;
     }
 
-    std::string VariantName(uint8 rideType, uint8 trackType, int variant) override {
+    std::string VariantName(uint8_t rideType, uint8_t trackType, int variant) override {
         return String::Format("cableLift:%d", variant);
     }
 
-    virtual void ApplyTo(uint8 rideType, uint8 trackType, int variant,
+    virtual void ApplyTo(uint8_t rideType, uint8_t trackType, int variant,
                          rct_tile_element *tileElement, rct_tile_element *surfaceElement,
                          Ride *ride, rct_ride_entry *rideEntry
     ) override {
@@ -82,33 +75,33 @@ public:
 
 class ChainLiftFilter : public ITestTrackFilter {
 public:
-    bool AppliesTo(uint8 rideType, uint8 trackType) override {
+    bool AppliesTo(uint8_t rideType, uint8_t trackType) override {
         return !ride_type_has_flag(rideType, RIDE_TYPE_FLAG_FLAT_RIDE);
     }
 
-    int Variations(uint8 rideType, uint8 trackType) override {
+    int Variations(uint8_t rideType, uint8_t trackType) override {
         return 2;
     }
 
-    std::string VariantName(uint8 rideType, uint8 trackType, int variant) override {
+    std::string VariantName(uint8_t rideType, uint8_t trackType, int variant) override {
         return String::Format("chainLift:%d", variant);
     }
 
-    virtual void ApplyTo(uint8 rideType, uint8 trackType, int variant,
+    virtual void ApplyTo(uint8_t rideType, uint8_t trackType, int variant,
                          rct_tile_element *tileElement, rct_tile_element *surfaceElement,
                          Ride *ride, rct_ride_entry *rideEntry
     ) override {
         if (variant == 0) {
-            tileElement->type &= ~TRACK_ELEMENT_FLAG_CHAIN_LIFT;
+            tileElement->type &= ~TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
         } else {
-            tileElement->type |= TRACK_ELEMENT_FLAG_CHAIN_LIFT;
+            tileElement->type |= TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
         }
     }
 };
 
 class InvertedFilter : public ITestTrackFilter {
 public:
-    bool AppliesTo(uint8 rideType, uint8 trackType) override {
+    bool AppliesTo(uint8_t rideType, uint8_t trackType) override {
         if (rideType == RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER ||
             rideType == RIDE_TYPE_FLYING_ROLLER_COASTER ||
             rideType == RIDE_TYPE_LAY_DOWN_ROLLER_COASTER) {
@@ -118,15 +111,15 @@ public:
         return false;
     }
 
-    int Variations(uint8 rideType, uint8 trackType) override {
+    int Variations(uint8_t rideType, uint8_t trackType) override {
         return 2;
     }
 
-    std::string VariantName(uint8 rideType, uint8 trackType, int variant) override {
+    std::string VariantName(uint8_t rideType, uint8_t trackType, int variant) override {
         return String::Format("inverted:%d", variant);
     }
 
-    virtual void ApplyTo(uint8 rideType, uint8 trackType, int variant,
+    virtual void ApplyTo(uint8_t rideType, uint8_t trackType, int variant,
                          rct_tile_element *tileElement, rct_tile_element *surfaceElement,
                          Ride *ride, rct_ride_entry *rideEntry
     ) override {
@@ -143,7 +136,7 @@ public:
 
 class EntranceStyleFilter : public ITestTrackFilter {
 public:
-    bool AppliesTo(uint8 rideType, uint8 trackType) override {
+    bool AppliesTo(uint8_t rideType, uint8_t trackType) override {
         if (trackType == TRACK_ELEM_BEGIN_STATION ||
             trackType == TRACK_ELEM_MIDDLE_STATION ||
             trackType == TRACK_ELEM_END_STATION) {
@@ -153,15 +146,15 @@ public:
         return false;
     }
 
-    int Variations(uint8 rideType, uint8 trackType) override {
+    int Variations(uint8_t rideType, uint8_t trackType) override {
         return RIDE_ENTRANCE_STYLE_COUNT - 1;
     }
 
-    std::string VariantName(uint8 rideType, uint8 trackType, int variant) override {
+    std::string VariantName(uint8_t rideType, uint8_t trackType, int variant) override {
         return String::Format("entranceStyle:%d", variant);
     }
 
-    virtual void ApplyTo(uint8 rideType, uint8 trackType, int variant,
+    virtual void ApplyTo(uint8_t rideType, uint8_t trackType, int variant,
                          rct_tile_element *tileElement, rct_tile_element *surfaceElement,
                          Ride *ride, rct_ride_entry *rideEntry
     ) override {
@@ -173,15 +166,15 @@ public:
 
 
 static void CallOriginal(
-    uint8 rideType,
-    uint8 trackType,
-    uint8 direction,
-    uint8 trackSequence,
-    uint16 height,
+    uint8_t rideType,
+    uint8_t trackType,
+    uint8_t direction,
+    uint8_t trackSequence,
+    uint16_t height,
     rct_tile_element *tileElement
 ) {
-    uint32 *trackDirectionList = (uint32 *) RideTypeTrackPaintFunctionsOld[rideType][trackType];
-    const uint8 rideIndex = 0;
+    uint32_t *trackDirectionList = (uint32_t *) RideTypeTrackPaintFunctionsOld[rideType][trackType];
+    const uint8_t rideIndex = 0;
 
     // Have to call from this point as it pushes esi and expects callee to pop it
     RCT2_CALLPROC_X(
@@ -197,11 +190,11 @@ static void CallOriginal(
 }
 
 static void CallNew(
-    uint8 rideType,
-    uint8 trackType,
-    uint8 direction,
-    uint8 trackSequence,
-    uint16 height,
+    uint8_t rideType,
+    uint8_t trackType,
+    uint8_t direction,
+    uint8_t trackSequence,
+    uint16_t height,
     rct_tile_element *tileElement
 ) {
     TRACK_PAINT_FUNCTION_GETTER newPaintFunctionGetter = RideTypeTrackPaintFunctions[rideType];
@@ -210,19 +203,19 @@ static void CallNew(
     newPaintFunction(&gPaintSession, 0, trackSequence, direction, height, tileElement);
 }
 
-typedef uint8 (*TestFunction)(uint8, uint8, uint8, std::string *);
+using TestFunction = uint8_t (*)(uint8_t, uint8_t, uint8_t, std::string *);
 
-static uint8 TestTrackElementPaintCalls(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error);
+static uint8_t TestTrackElementPaintCalls(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error);
 
-static uint8 TestTrackElementSegmentSupportHeight(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error);
+static uint8_t TestTrackElementSegmentSupportHeight(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error);
 
-static uint8 TestTrackElementGeneralSupportHeight(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error);
+static uint8_t TestTrackElementGeneralSupportHeight(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error);
 
-static uint8 TestTrackElementSideTunnels(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error);
+static uint8_t TestTrackElementSideTunnels(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error);
 
-static uint8 TestTrackElementVerticalTunnels(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error);
+static uint8_t TestTrackElementVerticalTunnels(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error);
 
-uint8 TestTrack::TestPaintTrackElement(uint8 rideType, uint8 trackType, std::string *out) {
+uint8_t TestTrack::TestPaintTrackElement(uint8_t rideType, uint8_t trackType, std::string *out) {
     if (!Utils::rideSupportsTrackType(rideType, trackType)) {
         return TEST_FAILED;
     }
@@ -238,7 +231,7 @@ uint8 TestTrack::TestPaintTrackElement(uint8 rideType, uint8 trackType, std::str
     int sequenceCount = Utils::getTrackSequenceCount(rideType, trackType);
     std::string error = String::Format("rct2: 0x%08X\n", RideTypeTrackPaintFunctionsOld[rideType][trackType]);
 
-    uint8 retVal = TEST_SUCCESS;
+    uint8_t retVal = TEST_SUCCESS;
 
     static TestFunction functions[] = {
         TestTrackElementPaintCalls,
@@ -262,16 +255,16 @@ uint8 TestTrack::TestPaintTrackElement(uint8 rideType, uint8 trackType, std::str
     return retVal;
 }
 
-static uint8 TestTrackElementPaintCalls(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error) {
-    uint16 height = 3 * 16;
+static uint8_t TestTrackElementPaintCalls(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error) {
+    uint16_t height = 3 * 16;
 
-    rct_tile_element tileElement = {0};
+    rct_tile_element tileElement = {};
     tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
     track_element_set_type(&tileElement, trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
-    rct_tile_element surfaceElement = {0};
+    rct_tile_element surfaceElement = {};
     surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
     surfaceElement.base_height = 2;
     gSurfaceElement = &surfaceElement;
@@ -284,7 +277,7 @@ static uint8 TestTrackElementPaintCalls(uint8 rideType, uint8 trackType, uint8 t
     TestPaint::ResetEnvironment();
     TestPaint::ResetTunnels();
 
-    function_call callBuffer[256] = {0};
+    function_call callBuffer[256] = {};
     int callCount = 0;
 
     // TODO: test supports
@@ -308,19 +301,19 @@ static uint8 TestTrackElementPaintCalls(uint8 rideType, uint8 trackType, uint8 t
     }
 
     // Add an element so there's always something to add to
-    std::vector<uint8> filler;
+    std::vector<uint8_t> filler;
     filler.push_back(0);
 
-    std::vector<std::vector<uint8>> argumentPermutations;
+    std::vector<std::vector<uint8_t>> argumentPermutations;
     argumentPermutations.push_back(filler);
     for (size_t filterIndex = 0; filterIndex < activeFilters.size(); ++filterIndex) {
         ITestTrackFilter *filter = activeFilters[filterIndex];
-        uint8 variantCount = filter->Variations(rideType, trackType);
+        uint8_t variantCount = filter->Variations(rideType, trackType);
 
-        std::vector<std::vector<uint8>> newArgumentPermutations;
+        std::vector<std::vector<uint8_t>> newArgumentPermutations;
         for (int variant = 0; variant < variantCount; variant++) {
             for (auto &&oldPermutation : argumentPermutations) {
-                std::vector<uint8> permutation;
+                std::vector<uint8_t> permutation;
                 permutation.insert(permutation.begin(), oldPermutation.begin(), oldPermutation.end());
                 permutation.push_back(variant);
                 newArgumentPermutations.push_back(permutation);
@@ -336,7 +329,7 @@ static uint8 TestTrackElementPaintCalls(uint8 rideType, uint8 trackType, uint8 t
         std::string baseCaseName = "[";
 
         for (size_t filterIndex = 0; filterIndex < activeFilters.size(); ++filterIndex) {
-            uint8 &variant = arguments[1 + filterIndex];
+            uint8_t &variant = arguments[1 + filterIndex];
             baseCaseName += activeFilters[filterIndex]->VariantName(rideType, trackType, variant);
             baseCaseName += " ";
 
@@ -347,9 +340,10 @@ static uint8 TestTrackElementPaintCalls(uint8 rideType, uint8 trackType, uint8 t
         for (int currentRotation = 0; currentRotation < 4; currentRotation++) {
             gCurrentRotation = currentRotation;
             RCT2_CurrentRotation = currentRotation;
+            gPaintSession.CurrentRotation = currentRotation;
             for (int direction = 0; direction < 4; direction++) {
-                RCT2_GLOBAL(0x009DE56A, sint16) = 64; // x
-                RCT2_GLOBAL(0x009DE56E, sint16) = 64; // y
+                RCT2_GLOBAL(0x009DE56A, int16_t) = 64; // x
+                RCT2_GLOBAL(0x009DE56E, int16_t) = 64; // y
 
                 std::string caseName = String::Format(
                     "%srotation:%d direction:%d trackSequence:%d]",
@@ -367,13 +361,13 @@ static uint8 TestTrackElementPaintCalls(uint8 rideType, uint8 trackType, uint8 t
                 oldCalls.insert(oldCalls.begin(), callBuffer, callBuffer + callCount);
 
                 PaintIntercept::ClearCalls();
-                testpaint_clear_ignore();
+                TestPaint::testClearIgnore();
                 TestPaint::ResetSupportHeights();
                 gPaintSession.WoodenSupportsPrependTo = nullptr;
 
                 CallNew(rideType, trackType, direction, trackSequence, height, &tileElement);
 
-                if (testpaint_is_ignored(direction, trackSequence)) {
+                if (TestPaint::testIsIgnored(direction, trackSequence)) {
                     *error += String::Format("[  IGNORED ]   %s\n", caseName.c_str());
                     continue;
                 }
@@ -409,16 +403,16 @@ static uint8 TestTrackElementPaintCalls(uint8 rideType, uint8 trackType, uint8 t
     return TEST_SUCCESS;
 }
 
-static uint8 TestTrackElementSegmentSupportHeight(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error) {
-    uint16 height = 3 * 16;
+static uint8_t TestTrackElementSegmentSupportHeight(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error) {
+    uint16_t height = 3 * 16;
 
-    rct_tile_element tileElement = {0};
+    rct_tile_element tileElement = {};
     tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
     track_element_set_type(&tileElement, trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
     
-    rct_tile_element surfaceElement = {0};
+    rct_tile_element surfaceElement = {};
     surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
     surfaceElement.base_height = 2;
     gSurfaceElement = &surfaceElement;
@@ -464,9 +458,9 @@ static uint8 TestTrackElementSegmentSupportHeight(uint8 rideType, uint8 trackTyp
     for (int direction = 0; direction < 4; direction++) {
         TestPaint::ResetSupportHeights();
 
-        testpaint_clear_ignore();
+        TestPaint::testClearIgnore();
         CallNew(rideType, trackType, direction, trackSequence, height, &tileElement);
-        if (testpaint_is_ignored(direction, trackSequence)) {
+        if (TestPaint::testIsIgnored(direction, trackSequence)) {
             continue;
         }
 
@@ -488,16 +482,16 @@ static uint8 TestTrackElementSegmentSupportHeight(uint8 rideType, uint8 trackTyp
     return TEST_SUCCESS;
 }
 
-static uint8 TestTrackElementGeneralSupportHeight(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error) {
-    uint16 height = 3 * 16;
+static uint8_t TestTrackElementGeneralSupportHeight(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error) {
+    uint16_t height = 3 * 16;
 
-    rct_tile_element tileElement = {0};
+    rct_tile_element tileElement = {};
     tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
     track_element_set_type(&tileElement, trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
-    rct_tile_element surfaceElement = {0};
+    rct_tile_element surfaceElement = {};
     surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
     surfaceElement.base_height = 2;
     gSurfaceElement = &surfaceElement;
@@ -548,9 +542,9 @@ static uint8 TestTrackElementGeneralSupportHeight(uint8 rideType, uint8 trackTyp
     for (int direction = 0; direction < 4; direction++) {
         TestPaint::ResetSupportHeights();
 
-        testpaint_clear_ignore();
+        TestPaint::testClearIgnore();
         CallNew(rideType, trackType, direction, trackSequence, height, &tileElement);
-        if (testpaint_is_ignored(direction, trackSequence)) {
+        if (TestPaint::testIsIgnored(direction, trackSequence)) {
             continue;
         }
 
@@ -584,16 +578,16 @@ static uint8 TestTrackElementGeneralSupportHeight(uint8 rideType, uint8 trackTyp
     return TEST_SUCCESS;
 }
 
-static uint8 TestTrackElementSideTunnels(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error) {
-    uint16 height = 3 * 16;
+static uint8_t TestTrackElementSideTunnels(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error) {
+    uint16_t height = 3 * 16;
 
-    rct_tile_element tileElement = {0};
+    rct_tile_element tileElement = {};
     tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
     track_element_set_type(&tileElement, trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
-    rct_tile_element surfaceElement = {0};
+    rct_tile_element surfaceElement = {};
     surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
     surfaceElement.base_height = 2;
     gSurfaceElement = &surfaceElement;
@@ -613,12 +607,12 @@ static uint8 TestTrackElementSideTunnels(uint8 rideType, uint8 trackType, uint8 
     for (int direction = 0; direction < 4; direction++) {
         TestPaint::ResetTunnels();
 
-        for (sint8 offset = -8; offset <= 8; offset += 8) {
+        for (int8_t offset = -8; offset <= 8; offset += 8) {
             CallOriginal(rideType, trackType, direction, trackSequence, height + offset, &tileElement);
         }
 
-        uint8 rightIndex = (direction + 1) % 4;
-        uint8 leftIndex = direction;
+        uint8_t rightIndex = (direction + 1) % 4;
+        uint8_t leftIndex = direction;
 
         for (int i = 0; i < 4; ++i) {
             tileTunnelCalls[direction][i].call = TUNNELCALL_SKIPPED;
@@ -641,15 +635,15 @@ static uint8 TestTrackElementSideTunnels(uint8 rideType, uint8 trackType, uint8 
     for (int direction = 0; direction < 4; direction++) {
         TestPaint::ResetTunnels();
 
-        testpaint_clear_ignore();
+        TestPaint::testClearIgnore();
 
-        for (sint8 offset = -8; offset <= 8; offset += 8) {
+        for (int8_t offset = -8; offset <= 8; offset += 8) {
             // TODO: move tunnel pushing to interface so we don't have to check the output 3 times
             CallNew(rideType, trackType, direction, trackSequence, height + offset, &tileElement);
         }
 
-        uint8 rightIndex = (direction + 1) % 4;
-        uint8 leftIndex = direction;
+        uint8_t rightIndex = (direction + 1) % 4;
+        uint8_t leftIndex = direction;
 
         for (int i = 0; i < 4; ++i) {
             newTileTunnelCalls[direction][i].call = TUNNELCALL_SKIPPED;
@@ -700,16 +694,16 @@ static uint8 TestTrackElementSideTunnels(uint8 rideType, uint8 trackType, uint8 
     return TEST_SUCCESS;
 }
 
-static uint8 TestTrackElementVerticalTunnels(uint8 rideType, uint8 trackType, uint8 trackSequence, std::string *error) {
-    uint16 height = 3 * 16;
+static uint8_t TestTrackElementVerticalTunnels(uint8_t rideType, uint8_t trackType, uint8_t trackSequence, std::string *error) {
+    uint16_t height = 3 * 16;
 
-    rct_tile_element tileElement = {0};
+    rct_tile_element tileElement = {};
     tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
     track_element_set_type(&tileElement, trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
-    rct_tile_element surfaceElement = {0};
+    rct_tile_element surfaceElement = {};
     surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
     surfaceElement.base_height = 2;
     gSurfaceElement = &surfaceElement;
@@ -722,12 +716,12 @@ static uint8 TestTrackElementVerticalTunnels(uint8 rideType, uint8 trackType, ui
     TestPaint::ResetEnvironment();
     TestPaint::ResetTunnels();
 
-    uint16 verticalTunnelHeights[4];
+    uint16_t verticalTunnelHeights[4];
 
     for (int direction = 0; direction < 4; direction++) {
-        uint8 tunnelHeights[3] = {0};
+        uint8_t tunnelHeights[3] = {0};
 
-        for (uint8 i = 0; i < 3; i++) {
+        for (uint8_t i = 0; i < 3; i++) {
             gVerticalTunnelHeight = 0;
             CallOriginal(rideType, trackType, direction, trackSequence, height - 8 + i * 8, &tileElement);
             tunnelHeights[i] = gVerticalTunnelHeight;
@@ -744,16 +738,16 @@ static uint8 TestTrackElementVerticalTunnels(uint8 rideType, uint8 trackType, ui
         return TEST_SUCCESS;
     }
 
-    uint16 referenceHeight = verticalTunnelHeights[0];
+    uint16_t referenceHeight = verticalTunnelHeights[0];
 
     for (int direction = 0; direction < 4; direction++) {
 
-        testpaint_clear_ignore();
+        TestPaint::testClearIgnore();
 
         testPaintVerticalTunnelHeight = 0;
         CallNew(rideType, trackType, direction, trackSequence, height, &tileElement);
 
-        if (testpaint_is_ignored(direction, trackSequence)) {
+        if (TestPaint::testIsIgnored(direction, trackSequence)) {
             continue;
         }
 

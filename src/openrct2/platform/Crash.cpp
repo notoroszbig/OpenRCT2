@@ -1,20 +1,13 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
-#include "crash.h"
+#include "Crash.h"
 
 #ifdef USE_BREAKPAD
 #include <memory>
@@ -28,17 +21,12 @@
     #error Breakpad support not implemented yet for this platform
 #endif
 
-extern "C"
-{
-    #include "../localisation/language.h"
-    #include "../scenario/scenario.h"
-    #include "platform.h"
-}
-
 #include "../core/Console.hpp"
-#include "../core/Exception.hpp"
+#include "../localisation/Language.h"
 #include "../rct2/S6Exporter.h"
+#include "../scenario/Scenario.h"
 #include "../Version.h"
+#include "platform.h"
 
 #define WSZ(x) L"" x
 
@@ -99,7 +87,7 @@ static bool OnCrash(const wchar_t * dumpPath,
         exporter->SaveGame(saveFilePathUTF8);
         savedGameDumped = true;
     }
-    catch (const Exception &)
+    catch (const std::exception &)
     {
     }
     free(saveFilePathUTF8);
@@ -124,7 +112,7 @@ static bool OnCrash(const wchar_t * dumpPath,
     {
         LPITEMIDLIST pidl = ILCreateFromPathW(dumpPath);
         LPITEMIDLIST files[2];
-        uint32 numFiles = 0;
+        uint32_t numFiles = 0;
 
         files[numFiles++] = ILCreateFromPathW(dumpFilePath);
         if (savedGameDumped)
@@ -134,7 +122,7 @@ static bool OnCrash(const wchar_t * dumpPath,
         if (pidl != nullptr) {
             SHOpenFolderAndSelectItems(pidl, numFiles, (LPCITEMIDLIST *)files, 0);
             ILFree(pidl);
-            for (uint32 i = 0; i < numFiles; i++)
+            for (uint32_t i = 0; i < numFiles; i++)
             {
                 ILFree(files[i]);
             }
@@ -163,7 +151,7 @@ constexpr const wchar_t * PipeName = L"openrct2-bpad";
 
 #endif // USE_BREAKPAD
 
-extern "C" CExceptionHandler crash_init()
+CExceptionHandler crash_init()
 {
 #ifdef USE_BREAKPAD
     // Path must exist and be RW!

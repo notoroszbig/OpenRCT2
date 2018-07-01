@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #include <cmath>
 #include "../config/Config.h"
@@ -28,13 +21,13 @@ using namespace OpenRCT2::Audio;
 
 static IAudioMixer * GetMixer()
 {
-    IAudioContext * audioContext = GetContext()->GetAudioContext();
+    auto audioContext = GetContext()->GetAudioContext();
     return audioContext->GetMixer();
 }
 
 void Mixer_Init(const char * device)
 {
-    IAudioContext * audioContext = GetContext()->GetAudioContext();
+    auto audioContext = GetContext()->GetAudioContext();
     if (device == nullptr)
     {
         device = "";
@@ -42,7 +35,7 @@ void Mixer_Init(const char * device)
     audioContext->SetOutputDevice(std::string(device));
 }
 
-void * Mixer_Play_Effect(size_t id, sint32 loop, sint32 volume, float pan, double rate, sint32 deleteondone)
+void * Mixer_Play_Effect(size_t id, int32_t loop, int32_t volume, float pan, double rate, int32_t deleteondone)
 {
     IAudioChannel * channel = nullptr;
     if (gConfigSound.sound_enabled)
@@ -57,7 +50,7 @@ void * Mixer_Play_Effect(size_t id, sint32 loop, sint32 volume, float pan, doubl
             if (mixer != nullptr)
             {
                 mixer->Lock();
-                IAudioSource * source = mixer->GetSoundSource((sint32)id);
+                IAudioSource * source = mixer->GetSoundSource((int32_t)id);
                 channel = mixer->Play(source, loop, deleteondone != 0, false);
                 if (channel != nullptr)
                 {
@@ -74,10 +67,14 @@ void * Mixer_Play_Effect(size_t id, sint32 loop, sint32 volume, float pan, doubl
 
 void Mixer_Stop_Channel(void * channel)
 {
-    GetMixer()->Stop(static_cast<IAudioChannel*>(channel));
+    auto mixer = GetMixer();
+    if (mixer != nullptr)
+    {
+        mixer->Stop(static_cast<IAudioChannel*>(channel));
+    }
 }
 
-void Mixer_Channel_Volume(void * channel, sint32 volume)
+void Mixer_Channel_Volume(void * channel, int32_t volume)
 {
     IAudioMixer * audioMixer = GetMixer();
     if (audioMixer != nullptr)
@@ -110,27 +107,27 @@ void Mixer_Channel_Rate(void* channel, double rate)
     }
 }
 
-sint32 Mixer_Channel_IsPlaying(void * channel)
+int32_t Mixer_Channel_IsPlaying(void * channel)
 {
     return static_cast<IAudioChannel*>(channel)->IsPlaying();
 }
 
-uint64 Mixer_Channel_GetOffset(void * channel)
+uint64_t Mixer_Channel_GetOffset(void * channel)
 {
     return static_cast<IAudioChannel*>(channel)->GetOffset();
 }
 
-sint32 Mixer_Channel_SetOffset(void * channel, uint64 offset)
+int32_t Mixer_Channel_SetOffset(void * channel, uint64_t offset)
 {
     return static_cast<IAudioChannel*>(channel)->SetOffset(offset);
 }
 
-void Mixer_Channel_SetGroup(void * channel, sint32 group)
+void Mixer_Channel_SetGroup(void * channel, int32_t group)
 {
     static_cast<IAudioChannel *>(channel)->SetGroup(group);
 }
 
-void * Mixer_Play_Music(sint32 pathId, sint32 loop, sint32 streaming)
+void * Mixer_Play_Music(int32_t pathId, int32_t loop, int32_t streaming)
 {
     IAudioChannel * channel = nullptr;
     IAudioMixer * mixer = GetMixer();
@@ -140,7 +137,7 @@ void * Mixer_Play_Music(sint32 pathId, sint32 loop, sint32 streaming)
         {
             const utf8 * path = context_get_path_legacy(pathId);
 
-            IAudioContext * audioContext = GetContext()->GetAudioContext();
+            auto audioContext = GetContext()->GetAudioContext();
             IAudioSource * source = audioContext->CreateStreamFromWAV(path);
             if (source != nullptr)
             {
@@ -172,17 +169,17 @@ void Mixer_SetVolume(float volume)
     GetMixer()->SetVolume(volume);
 }
 
-sint32 DStoMixerVolume(sint32 volume)
+int32_t DStoMixerVolume(int32_t volume)
 {
-    return (sint32)(MIXER_VOLUME_MAX * (std::pow(10.0f, (float)volume / 2000)));
+    return (int32_t)(MIXER_VOLUME_MAX * (std::pow(10.0f, (float)volume / 2000)));
 }
 
-float DStoMixerPan(sint32 pan)
+float DStoMixerPan(int32_t pan)
 {
     return (((float)pan + -DSBPAN_LEFT) / DSBPAN_RIGHT) / 2;
 }
 
-double DStoMixerRate(sint32 frequency)
+double DStoMixerRate(int32_t frequency)
 {
     return (double)frequency / 22050;
 }

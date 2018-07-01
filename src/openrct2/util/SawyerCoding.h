@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #ifndef _SAWYERCODING_H_
 #define _SAWYERCODING_H_
@@ -20,10 +13,10 @@
 #include "../common.h"
 
 #pragma pack(push, 1)
-typedef struct sawyercoding_chunk_header {
-    uint8 encoding;
-    uint32 length;
-} sawyercoding_chunk_header;
+struct sawyercoding_chunk_header {
+    uint8_t encoding;
+    uint32_t length;
+};
 assert_struct_size(sawyercoding_chunk_header, 5);
 #pragma pack(pop)
 
@@ -47,26 +40,18 @@ enum {
     FILE_TYPE_SC4 = (2 << 2)
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern bool gUseRLE;
 
-uint32 sawyercoding_calculate_checksum(const uint8* buffer, size_t length);
-size_t sawyercoding_write_chunk_buffer(uint8 *dst_file, const uint8 *src_buffer, sawyercoding_chunk_header chunkHeader);
-size_t sawyercoding_decode_sv4(const uint8 *src, uint8 *dst, size_t length, size_t bufferLength);
-size_t sawyercoding_decode_sc4(const uint8 *src, uint8 *dst, size_t length, size_t bufferLength);
-size_t sawyercoding_encode_sv4(const uint8 *src, uint8 *dst, size_t length);
-size_t sawyercoding_decode_td6(const uint8 *src, uint8 *dst, size_t length);
-size_t sawyercoding_encode_td6(const uint8 *src, uint8 *dst, size_t length);
-sint32 sawyercoding_validate_track_checksum(const uint8* src, size_t length);
+uint32_t sawyercoding_calculate_checksum(const uint8_t* buffer, size_t length);
+size_t sawyercoding_write_chunk_buffer(uint8_t *dst_file, const uint8_t *src_buffer, sawyercoding_chunk_header chunkHeader);
+size_t sawyercoding_decode_sv4(const uint8_t *src, uint8_t *dst, size_t length, size_t bufferLength);
+size_t sawyercoding_decode_sc4(const uint8_t *src, uint8_t *dst, size_t length, size_t bufferLength);
+size_t sawyercoding_encode_sv4(const uint8_t *src, uint8_t *dst, size_t length);
+size_t sawyercoding_decode_td6(const uint8_t *src, uint8_t *dst, size_t length);
+size_t sawyercoding_encode_td6(const uint8_t *src, uint8_t *dst, size_t length);
+int32_t sawyercoding_validate_track_checksum(const uint8_t* src, size_t length);
 
-sint32 sawyercoding_detect_file_type(const uint8 *src, size_t length);
-sint32 sawyercoding_detect_rct1_version(sint32 gameVersion);
-
-#ifdef __cplusplus
-}
-#endif
+int32_t sawyercoding_detect_file_type(const uint8_t *src, size_t length);
+int32_t sawyercoding_detect_rct1_version(int32_t gameVersion);
 
 #endif

@@ -1,26 +1,21 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include <openrct2/Context.h>
 #include <openrct2/core/Math.hpp>
-#include <openrct2/localisation/localisation.h>
+#include <openrct2/localisation/Localisation.h>
 #include <openrct2/Input.h>
-#include <openrct2/interface/widget.h>
+#include <openrct2-ui/interface/Widget.h>
 #include <openrct2-ui/windows/Window.h>
+#include <openrct2/drawing/Drawing.h>
 
+// clang-format off
 enum {
     WIDX_BACKGROUND
 };
@@ -63,11 +58,12 @@ static rct_window_event_list window_tooltip_events = {
     window_tooltip_paint,
     nullptr
 };
+// clang-format on
 
 static utf8 _tooltipText[sizeof(gCommonStringFormatBuffer)];
-static sint16 _tooltipNumLines;
+static int16_t _tooltipNumLines;
 
-void window_tooltip_reset(sint32 x, sint32 y)
+void window_tooltip_reset(int32_t x, int32_t y)
 {
     gTooltipCursorX = x;
     gTooltipCursorY = y;
@@ -77,10 +73,10 @@ void window_tooltip_reset(sint32 x, sint32 y)
     input_set_flag(INPUT_FLAG_4, false);
 }
 
-void window_tooltip_show(rct_string_id id, sint32 x, sint32 y)
+void window_tooltip_show(rct_string_id id, int32_t x, int32_t y)
 {
     rct_window *w;
-    sint32 width, height;
+    int32_t width, height;
 
     w = window_find_by_class(WC_ERROR);
     if (w != nullptr)
@@ -91,14 +87,14 @@ void window_tooltip_show(rct_string_id id, sint32 x, sint32 y)
     format_string(buffer, 256, id, gCommonFormatArgs);
     gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
 
-    sint32 tooltip_text_width;
+    int32_t tooltip_text_width;
     tooltip_text_width = gfx_get_string_width_new_lined(buffer);
     buffer = gCommonStringFormatBuffer;
-    tooltip_text_width = Math::Min(tooltip_text_width, 196);
+    tooltip_text_width = std::min(tooltip_text_width, 196);
 
     gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
 
-    sint32 numLines, fontSpriteBase;
+    int32_t numLines, fontSpriteBase;
     tooltip_text_width = gfx_wrap_string(buffer, tooltip_text_width + 1, &numLines, &fontSpriteBase);
 
     _tooltipNumLines = numLines;
@@ -109,14 +105,14 @@ void window_tooltip_show(rct_string_id id, sint32 x, sint32 y)
 
     memcpy(_tooltipText, buffer, sizeof(_tooltipText));
 
-    sint32 screenWidth = context_get_width();
-    sint32 screenHeight = context_get_height();
+    int32_t screenWidth = context_get_width();
+    int32_t screenHeight = context_get_height();
     x = Math::Clamp(0, x - (width / 2), screenWidth - width);
 
     // TODO The cursor size will be relative to the window DPI.
     //      The amount to offset the y should be adjusted.
 
-    sint32 max_y = screenHeight - height;
+    int32_t max_y = screenHeight - height;
     y += 26; // Normally, we'd display the tooltip 26 lower
     if (y > max_y)
         // If y is too large, the tooltip could be forced below the cursor if we'd just clamped y,
@@ -142,7 +138,7 @@ void window_tooltip_show(rct_string_id id, sint32 x, sint32 y)
  *
  *  rct2: 0x006EA10D
  */
-void window_tooltip_open(rct_window *widgetWindow, rct_widgetindex widgetIndex, sint32 x, sint32 y)
+void window_tooltip_open(rct_window *widgetWindow, rct_widgetindex widgetIndex, int32_t x, int32_t y)
 {
     rct_widget *widget;
 
@@ -190,10 +186,10 @@ static void window_tooltip_update(rct_window *w)
  */
 static void window_tooltip_paint(rct_window *w, rct_drawpixelinfo *dpi)
 {
-    sint32 left = w->x;
-    sint32 top = w->y;
-    sint32 right = w->x + w->width - 1;
-    sint32 bottom = w->y + w->height - 1;
+    int32_t left = w->x;
+    int32_t top = w->y;
+    int32_t right = w->x + w->width - 1;
+    int32_t bottom = w->y + w->height - 1;
 
     // Background
     gfx_filter_rect(dpi, left + 1, top + 1, right - 1, bottom - 1, PALETTE_45);

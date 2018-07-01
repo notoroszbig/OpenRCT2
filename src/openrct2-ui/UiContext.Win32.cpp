@@ -1,18 +1,11 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
-* OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
-*
-* OpenRCT2 is the work of many authors, a full list can be found in contributors.md
-* For more information, visit https://github.com/OpenRCT2/OpenRCT2
-*
-* OpenRCT2 is free software: you can redistribute it and/or modify
-* it under the terms of the GNU General Public License as published by
-* the Free Software Foundation, either version 3 of the License, or
-* (at your option) any later version.
-*
-* A full copy of the GNU General Public License can be found in licence.txt
-*****************************************************************************/
-#pragma endregion
+ * Copyright (c) 2014-2018 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
 
 #ifdef _WIN32
 
@@ -33,8 +26,8 @@
 #undef interface
 #include <windows.h>
 #include <shlobj.h>
-#include <SDL.h>
-#include <SDL_syswm.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 
 // Native resource IDs
 #include "../../resources/resource.h"
@@ -54,7 +47,7 @@ static std::wstring SHGetPathFromIDListLongPath(LPCITEMIDLIST pidl)
     return pszPath;
 }
 
-namespace OpenRCT2 { namespace Ui
+namespace OpenRCT2::Ui
 {
     class Win32Context : public IPlatformUiContext
     {
@@ -98,14 +91,14 @@ namespace OpenRCT2 { namespace Ui
         std::string ShowFileDialog(SDL_Window * window, const FileDialogDesc &desc) override
         {
             std::wstring wcFilename = String::ToUtf16(desc.DefaultFilename);
-            wcFilename.resize(Math::Max<size_t>(wcFilename.size(), MAX_PATH));
+            wcFilename.resize(std::max<size_t>(wcFilename.size(), MAX_PATH));
 
             std::wstring wcTitle = String::ToUtf16(desc.Title);
             std::wstring wcInitialDirectory = String::ToUtf16(desc.InitialDirectory);
             std::wstring wcFilters = GetFilterString(desc.Filters);
 
             // Set open file name options
-            OPENFILENAMEW openFileName = { 0 };
+            OPENFILENAMEW openFileName = {};
             openFileName.lStructSize = sizeof(OPENFILENAMEW);
             openFileName.hwndOwner = GetHWND(window);
             openFileName.lpstrTitle = wcTitle.c_str();
@@ -137,10 +130,10 @@ namespace OpenRCT2 { namespace Ui
                 std::string resultExtension = Path::GetExtension(resultFilename);
                 if (resultExtension.empty())
                 {
-                    sint32 filterIndex = openFileName.nFilterIndex - 1;
+                    int32_t filterIndex = openFileName.nFilterIndex - 1;
 
                     assert(filterIndex >= 0);
-                    assert(filterIndex < (sint32)desc.Filters.size());
+                    assert(filterIndex < (int32_t)desc.Filters.size());
 
                     std::string pattern = desc.Filters[filterIndex].Pattern;
                     std::string patternExtension = Path::GetExtension(pattern);
@@ -163,7 +156,7 @@ namespace OpenRCT2 { namespace Ui
                 SUCCEEDED(SHGetMalloc(&lpMalloc)))
             {
                 std::wstring titleW = String::ToUtf16(title);
-                BROWSEINFOW bi = { 0 };
+                BROWSEINFOW bi = {};
                 bi.lpszTitle = titleW.c_str();
                 bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE | BIF_NONEWFOLDERBUTTON;
 
@@ -224,6 +217,6 @@ namespace OpenRCT2 { namespace Ui
     {
         return new Win32Context();
     }
-} }
+} // namespace OpenRCT2::Ui
 
 #endif // _WIN32

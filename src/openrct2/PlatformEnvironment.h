@@ -1,29 +1,21 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #pragma once
 
-#ifdef __cplusplus
-
+#include <memory>
 #include <string>
 #include "common.h"
 
 namespace OpenRCT2
 {
-    enum class DIRBASE : sint32
+    enum class DIRBASE : int32_t
     {
         RCT1,               // Base directory for original RollerCoaster Tycoon 1 content.
         RCT2,               // Base directory for original RollerCoaster Tycoon 2 content.
@@ -31,8 +23,9 @@ namespace OpenRCT2
         USER,               // Base directory for OpenRCT2 user content.
         CONFIG,             // Base directory for OpenRCT2 configuration.
         CACHE,              // Base directory for OpenRCT2 cache files.
+        DOCUMENTATION,      // Base directory for OpenRCT2 doc files.
     };
-    constexpr sint32 DIRBASE_COUNT = 6;
+    constexpr int32_t DIRBASE_COUNT = 7;
     using DIRBASE_VALUES = std::string[DIRBASE_COUNT];
 
     enum class DIRID
@@ -67,6 +60,7 @@ namespace OpenRCT2
         SCORES,             // Scenario scores (highscores.dat).
         SCORES_LEGACY,      // Scenario scores, legacy (scores.dat).
         SCORES_RCT2,        // Scenario scores, rct2 (\Saved Games\scores.dat).
+        CHANGELOG,          // Notable changes to the game between versions, distributed with the game.
     };
 
     /**
@@ -82,8 +76,7 @@ namespace OpenRCT2
         virtual void SetBasePath(DIRBASE base, const std::string &path) abstract;
     };
 
-    IPlatformEnvironment * CreatePlatformEnvironment(DIRBASE_VALUES basePaths);
-    IPlatformEnvironment * CreatePlatformEnvironment();
-}
+    std::unique_ptr<IPlatformEnvironment> CreatePlatformEnvironment(DIRBASE_VALUES basePaths);
+    std::unique_ptr<IPlatformEnvironment> CreatePlatformEnvironment();
 
-#endif
+} // namespace OpenRCT2

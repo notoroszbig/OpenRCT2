@@ -1,23 +1,16 @@
-#pragma region Copyright (c) 2014-2017 OpenRCT2 Developers
 /*****************************************************************************
- * OpenRCT2, an open source clone of Roller Coaster Tycoon 2.
+ * Copyright (c) 2014-2018 OpenRCT2 developers
  *
- * OpenRCT2 is the work of many authors, a full list can be found in contributors.md
- * For more information, visit https://github.com/OpenRCT2/OpenRCT2
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
- * OpenRCT2 is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * A full copy of the GNU General Public License can be found in licence.txt
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
-#pragma endregion
 
 #include "audio/audio.h"
 #include "audio/AudioMixer.h"
 #include "Context.h"
-#include "drawing/drawing.h"
+#include "drawing/Drawing.h"
 #include "Intro.h"
 #include "sprites.h"
 
@@ -28,12 +21,12 @@
 #define PALETTE_G1_IDX_DEVELOPER    23217
 #define PALETTE_G1_IDX_LOGO         23224
 
-uint8 gIntroState;
+uint8_t gIntroState;
 
 // Used mainly for timing but also for Y coordinate and fading.
-static sint32 _introStateCounter;
+static int32_t _introStateCounter;
 
-static void *_soundChannel = NULL;
+static void *_soundChannel = nullptr;
 static bool _chainLiftFinished;
 
 static void screen_intro_process_mouse_input();
@@ -88,9 +81,9 @@ void intro_update()
             _chainLiftFinished = true;
 
             // Stop the chain lift sound
-            if (_soundChannel != NULL) {
+            if (_soundChannel != nullptr) {
                 Mixer_Stop_Channel(_soundChannel);
-                _soundChannel = NULL;
+                _soundChannel = nullptr;
             }
 
             // Play the track friction sound
@@ -100,9 +93,9 @@ void intro_update()
         // Check if logo is off the screen...ish
         if (_introStateCounter >= context_get_height() + 40) {
             // Stop the track friction sound
-            if (_soundChannel != NULL) {
+            if (_soundChannel != nullptr) {
                 Mixer_Stop_Channel(_soundChannel);
-                _soundChannel = NULL;
+                _soundChannel = nullptr;
             }
 
             // Play long peep scream sound
@@ -139,9 +132,9 @@ void intro_update()
         break;
     case INTRO_STATE_CLEAR:
         // Stop any playing sound
-        if (_soundChannel != NULL) {
+        if (_soundChannel != nullptr) {
             Mixer_Stop_Channel(_soundChannel);
-            _soundChannel = NULL;
+            _soundChannel = nullptr;
         }
 
         // Move to next part
@@ -158,7 +151,7 @@ void intro_update()
 
 void intro_draw(rct_drawpixelinfo *dpi)
 {
-    sint32 screenWidth = context_get_width();
+    int32_t screenWidth = context_get_width();
 
     switch (gIntroState) {
     case INTRO_STATE_DISCLAIMER_1:
@@ -231,7 +224,7 @@ static void screen_intro_process_mouse_input()
  */
 static void screen_intro_process_keyboard_input()
 {
-    const uint8 * keys = context_get_keys_state();
+    const uint8_t * keys = context_get_keys_state();
     for (int i = 0; i < 256; i++) {
         if (keys[i] != 0) {
             screen_intro_skip_part();
@@ -256,9 +249,9 @@ static void screen_intro_skip_part()
 
 static void screen_intro_draw_logo(rct_drawpixelinfo *dpi)
 {
-    sint32 screenWidth = context_get_width();
-    sint32 imageWidth = 640;
-    sint32 imageX = (screenWidth - imageWidth) / 2;
+    int32_t screenWidth = context_get_width();
+    int32_t imageWidth = 640;
+    int32_t imageX = (screenWidth - imageWidth) / 2;
 
     drawing_engine_invalidate_image(SPR_INTRO_LOGO_00);
     drawing_engine_invalidate_image(SPR_INTRO_LOGO_10);
